@@ -1,0 +1,27 @@
+<div
+    class="group/menu flex w-full h-full min-h-0 grow items-end overflow-hidden bg-white font-bold text-black transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]">
+    <div class="flex h-full w-full flex-col justify-between p-6 lg:p-12">
+        <div class="flex w-full items-start justify-between">
+            <div (click)="toggle()" class="text-2xl font-black tracking-tighter lg:text-4xl">JAN</div>
+        </div>
+
+        <div [class.opacity-100]="isOpen()" class="opacity-0 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] lg:group-hover/menu:opacity-100">
+            <nav class="flex flex-col space-y-4 text-4xl font-black tracking-tighter uppercase lg:text-7xl">
+                <a href="#" class="transition-all hover:pl-4 hover:italic">Connect</a>
+                <a href="#" class="transition-all hover:pl-4 hover:italic">Resume</a>
+                <a href="#" class="transition-all hover:pl-4 hover:italic">Lab</a>
+            </nav>
+        </div>
+    </div>
+    <div class="text-right p-4">
+        <button (click)="$event.stopPropagation(); toggle()"
+            class="group/arrow flex cursor-pointer items-center justify-center lg:hidden" aria-label="Toggle Menu">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="4"
+                class="h-10 w-10 transition-transform duration-700 ease-[cubic-bezier(0.68,-0.6,0.32,1.6)]"
+                [class.rotate-180]="isOpen()">
+                <path stroke-linecap="square" stroke-linejoin="miter" d="M5 15l7-7 7 7" />
+            </svg>
+        </button>
+    </div>
+</div>

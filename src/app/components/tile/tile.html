@@ -1,0 +1,48 @@
+<div (click)="select.emit()" [attr.data-status]="status()"
+    class="group relative flex h-full w-full flex-col lg:flex-row justify-start overflow-hidden">
+
+    <div
+        class="absolute right-2 top-2 z-50 px-2 py-4 opacity-0 transition-all lg:opacity-0 lg:group-hover:opacity-100 group-data-[status=active]:rotate-45 group-data-[status=active]:opacity-100">
+        <button class="flex items-center justify-center focus:outline-none w-16 h-16">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor"
+                stroke-width="3" stroke-linecap="square"
+                class="w-full h-full origin-center">
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="12" y1="4" x2="12" y2="20" />
+            </svg>
+        </button>
+    </div>
+
+    <div class="flex h-full w-full flex-col lg:flex-row justify-start p-6 lg:p-10">
+
+        <div class="flex flex-col justify-start lg:flex-row shrink-0">
+            <h1
+                class="text-6xl lg:text-8xl font-black tracking-tighter transition-all duration-300 lg:[writing-mode:vertical-lr]">
+                {{ tileTitle() }}
+            </h1>
+            <!-- <h2 class="max-w-md min-w-10/12 translate-y-10 lg:translate-y-0 lg:translate-x-10 overflow-hidden p-6 text-3xl font-black opacity-0 transition-all duration-300 group-hover:translate-y-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 group-data-[status=active]:opacity-100 group-data-[status=active]:translate-y-0 group-data-[status=active]:translate-x-0">
+                {{ tileSubtitle() }}
+            </h2> -->
+        </div>
+
+        <div
+            class="no-scrollbar flex-1 mt-8 lg:mt-0 lg:ml-8 overflow-x-hidden overflow-y-auto opacity-0 transition-all duration-500 lg:group-hover:opacity-100 group-data-[status=active]:opacity-100 translate-y-100 lg:translate-y-0 lg:translate-x-30 lg:group-hover:translate-x-0 group-data-[status=active]:translate-y-0 group-data-[status=active]:translate-x-0">
+
+            <div class="flex flex-col lg:flex-row h-full w-full gap-8 lg:gap-16">
+
+                <div class="w-full lg:max-w-md lg:min-w-md shrink-0">
+                    <ng-content select="[preview]"></ng-content>
+                </div>
+
+                @if (status() === 'active') {
+                <div
+                    class="w-full lg:min-w-150 lg:max-w-3xl shrink-0 opacity-0 transition-all duration-1000
+                    group-data-[status=active]:opacity-100 translate-y-100 lg:translate-y-0 lg:translate-x-30 group-data-[status=active]:translate-y-0 group-data-[status=active]:translate-x-0">
+                    <ng-content select="[details]"></ng-content>
+                </div>
+                }
+            </div>
+
+        </div>
+    </div>
+</div>

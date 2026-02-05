@@ -1,0 +1,415 @@
+<div
+  class="fixed inset-0 overscroll-none flex h-dvh w-dvw flex-col overflow-hidden bg-black font-sans selection:bg-black selection:text-white lg:flex-row">
+  <div class="flex min-h-0 min-w-0 grow-12 basis-0 flex-col lg:flex-row transition-all">
+
+    <!-- SECTION: ME -->
+    <app-tile tileTitle="ME." tileSubtitle="JAN" [status]="getTileStatus(0)" (select)="toggleTile(0)"
+      class="bg-amber-100 text-stone-900">
+
+      <div preview class="space-y-12">
+        <div class="group/img relative aspect-[4/5] w-full overflow-hidden bg-stone-300 transition-all duration-700">
+          <img src="/me.png" alt="Portrait"
+            class="h-full w-full object-cover mix-blend-multiply grayscale transition-all duration-700 group-hover/img:grayscale-0 group-hover/img:scale-105" />
+          <div class="absolute inset-0 bg-amber-200/10 mix-blend-overlay pointer-events-none"></div>
+        </div>
+
+        <div class="space-y-4">
+          <h2 class="text-4xl leading-[0.9] font-black uppercase tracking-tighter">
+            Engineering <br />
+            <span class="text-amber-600">Emotion.</span>
+          </h2>
+          <p class="text-lg leading-tight tracking-tight font-medium">
+            Fullstack Developer bridging the gap between bulletproof Backends and interfaces that actually feel like
+            something.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 border-t border-stone-900/20 pt-6">
+          <div>
+            <p class="text-[10px] font-bold tracking-[0.2em] uppercase opacity-50">Expertise</p>
+            <p class="mt-2 text-sm font-black italic">Java / Spring / Angular</p>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold tracking-[0.2em] uppercase opacity-50">Vibe</p>
+            <p class="mt-2 text-sm font-black italic">Brutalism & Motion</p>
+          </div>
+        </div>
+      </div>
+
+      <div details class="grid grid-cols-1 md:grid-cols-2 gap-16">
+
+        <div class="space-y-8">
+          <section>
+            <h3 class="text-xs font-bold tracking-[0.3em] uppercase mb-4 text-amber-700">The Stack</h3>
+            <p class="text-xl leading-relaxed">
+              I build scalable systems with **Spring Boot** because I like my logic solid. But I spend my nights in
+              **Tailwind** and **Signals** because I believe a UI should react as fast as a thought.
+            </p>
+          </section>
+
+          <div class="flex flex-wrap gap-2">
+            <span class="px-3 py-1 border border-stone-900 text-xs font-black uppercase">Spring Boot</span>
+            <span class="px-3 py-1 border border-stone-900 text-xs font-black uppercase">PostgreSQL</span>
+            <span class="px-3 py-1 border border-stone-900 text-xs font-black uppercase">Angular</span>
+            <span class="px-3 py-1 border border-stone-900 text-xs font-black uppercase">Docker</span>
+          </div>
+        </div>
+
+        <div class="space-y-8 border-l border-stone-900/10 pl-8">
+          <section>
+            <h3 class="text-xs font-bold tracking-[0.3em] uppercase mb-4 text-amber-700">The Long Game</h3>
+            <p class="text-xl leading-relaxed italic">
+              "Code is for computers, business is for people."
+            </p>
+            <p class="mt-4 text-stone-600 leading-relaxed">
+              I’m deeply curious about how companies actually work—beyond the API. Finance and leadership aren't just
+              buzzwords to me; they're the next logical upgrade. **MBA pending.**
+            </p>
+          </section>
+
+          <section class="pt-8 border-t border-stone-900/10 flex items-start gap-6">
+            <div class="text-4xl filter grayscale">🚲</div>
+            <div class="space-y-1">
+              <h4 class="font-black uppercase text-sm italic tracking-tight">Analog Recovery</h4>
+              <p class="text-xs opacity-70 leading-snug">Chasing watts through the Taunus hills to clear the cache.
+                High-speed, low-latency.</p>
+            </div>
+          </section>
+        </div>
+
+      </div>
+    </app-tile>
+
+    <!-- SECTION: YOU -->
+    <app-tile tileTitle="YOU." tileSubtitle="WHO ARE YOU?" [status]="getTileStatus(1)" (select)="toggleTile(1)"
+      class="bg-indigo-600 text-white">
+
+      <div preview>
+        <div
+          class="scrollbar-hide mt-12 flex-1 overflow-y-auto pr-2 opacity-0 transition-all duration-700 group-hover:opacity-100">
+          <div class="max-w-md space-y-10">
+            <p class="text-5xl leading-[0.8] font-black tracking-tighter italic">
+              WE SPEAK <br />
+              THE SAME <br />
+              LANGUAGE.
+            </p>
+            <div class="h-px w-full bg-white/20"></div>
+            <p class="text-xl font-medium text-indigo-100">You're a founder, a creative director, or a studio lead who
+              values performance as much as aesthetics. You need a partner who can translate "Big Ideas" into "Big
+              Frames."</p>
+
+            <div class="space-y-2">
+              <p class="text-[10px] font-bold tracking-widest uppercase opacity-60">Success Stories</p>
+              <div class="flex gap-2">
+                <div class="h-32 w-full bg-white/5 p-4 transition-colors hover:bg-white/10">
+                  <span class="font-mono text-xs">01/ Fintech_Redesign</span>
+                </div>
+                <div class="h-32 w-full bg-white/5 p-4 transition-colors hover:bg-white/10">
+                  <span class="font-mono text-xs">02/ AI_Dashboard</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div details>
+        <p class="text-black/70 italic">
+          Hier kommt dein ausführlicher Content rein, der nur im Full-Size Mode sichtbar ist.
+        </p>
+      </div>
+    </app-tile>
+
+    <!-- SECTION: MY STUFF -->
+    <app-tile tileTitle="INDEX." tileSubtitle="MY STUFF" [status]="getTileStatus(2)" (select)="toggleTile(2)"
+      class="bg-slate-900 text-white">
+      <div preview>
+        <div>
+          <div class="grid grid-cols-1 gap-12 lg:grid-cols-2">
+            <div class="group/item cursor-pointer space-y-4">
+              <div class="relative aspect-video overflow-hidden bg-neutral-800">
+                <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800"
+                  class="h-full w-full object-cover transition-transform duration-700 group-hover/item:scale-110" />
+              </div>
+              <div class="flex justify-between">
+                <div>
+                  <h3 class="font-black uppercase italic">Neural_Interface_v2</h3>
+                  <p class="text-xs opacity-50">Experimental Lab / 2025</p>
+                </div>
+                <span class="text-xl">↗️</span>
+              </div>
+            </div>
+            <div class="group/item cursor-pointer space-y-4">
+              <div class="relative aspect-video overflow-hidden bg-neutral-800">
+                <img src="https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&q=80&w=800"
+                  class="h-full w-full object-cover transition-transform duration-700 group-hover/item:scale-110" />
+              </div>
+              <div class="flex justify-between">
+                <div>
+                  <h3 class="font-black uppercase italic">Brutal_Typography</h3>
+                  <p class="text-xs opacity-50">Branding Studio / 2024</p>
+                </div>
+                <span class="text-xl">↗️</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div details>
+        <div
+          class="group/grid flex grow flex-col overflow-hidden bg-black text-white absolute inset-0 z-20 animate-in fade-in zoom-in-95 duration-500">
+          <div
+            class="cubic-bezier(0.23, 1, 0.32, 1) flex min-h-0 grow basis-0 transition-all duration-500 has-[.row1tile:hover]:grow-[5]">
+            <div
+              class="group/tile tile-1 row1tile relative min-w-0 grow basis-0 overflow-hidden bg-stone-900 transition-all duration-500 group-has-[.tile-3:hover]/grid:grow-[5] hover:grow-[5]">
+              <div
+                class="p-6 text-6xl font-black tracking-tighter opacity-20 transition-opacity duration-500 group-hover/grid:opacity-10 group-hover/tile:opacity-100 lg:p-10">
+                01</div>
+
+              <div
+                class="absolute top-24 left-0 flex w-[calc(100vw-80px)] flex-col gap-6 p-6 opacity-0 transition-all duration-500 group-hover/tile:opacity-100 lg:top-32 lg:w-[500px] lg:p-10">
+                <div>
+                  <h3 class="text-3xl leading-none font-black tracking-tighter uppercase lg:text-4xl">
+                    Docker First <br />
+                    Enterprise Blueprint
+                  </h3>
+                  <p class="mt-4 text-sm leading-relaxed text-stone-300">Simplifying the dev setup with a docker-first
+                    approach to reduce time-to-first system-run.</p>
+                </div>
+
+                <div
+                  class="flex translate-y-4 flex-wrap gap-2 transition-transform delay-100 duration-500 group-hover/tile:translate-y-0">
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">Docker</span>
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">Keycloak</span>
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">Architecture</span>
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">Setup
+                    & Config</span>
+                </div>
+
+                <div class="pt-4 opacity-0 transition-all delay-200 duration-500 group-hover/tile:opacity-100">
+                  <a href="https://github.com/ningelschlingel/enterprise-fullstack-blueprint" target="_blank"
+                    class="group/link inline-flex items-center gap-2 text-sm font-bold tracking-tighter uppercase">
+                    <span>View on GitHub</span>
+                    <svg class="h-4 w-4 transition-transform group-hover/link:translate-x-1" fill="none"
+                      stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="group/tile tile-2 row1tile relative min-w-0 grow basis-0 overflow-hidden bg-indigo-900 transition-all duration-500 group-has-[.tile-4:hover]/grid:grow-[5] hover:grow-[5]">
+              <div
+                class="p-6 text-6xl font-black tracking-tighter opacity-20 transition-opacity duration-500 group-hover/grid:opacity-0 group-hover/tile:opacity-100 lg:p-10">
+                02</div>
+
+              <div
+                class="absolute top-24 left-0 flex w-[calc(100vw-80px)] flex-col gap-6 p-6 opacity-0 transition-all duration-500 group-hover/tile:opacity-100 lg:top-32 lg:w-[500px] lg:p-10">
+                <div>
+                  <h3 class="text-3xl leading-none font-black tracking-tighter uppercase lg:text-4xl">
+                    Telegram <br />
+                    Security Bot
+                  </h3>
+                  <p class="mt-4 text-sm leading-relaxed text-stone-300">Combining hardware and software engineering to
+                    build a simple, motion-activated security camera leveraging the telegram api to inform about
+                    intruders
+                    with video footage.</p>
+                </div>
+
+                <div
+                  class="flex translate-y-4 flex-wrap gap-2 transition-transform delay-100 duration-500 group-hover/tile:translate-y-0">
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">Python</span>
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">Telegram
+                    API</span>
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">Raspberry
+                    Pi</span>
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">RCWL-0516</span>
+                </div>
+
+                <div class="pt-4 opacity-0 transition-all delay-200 duration-500 group-hover/tile:opacity-100">
+                  <a href="https://github.com/ningelschlingel/telegram-security-bot" target="_blank"
+                    class="group/link inline-flex items-center gap-2 text-sm font-bold tracking-tighter uppercase">
+                    <span>View on GitHub</span>
+                    <svg class="h-4 w-4 transition-transform group-hover/link:translate-x-1" fill="none"
+                      stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="cubic-bezier(0.23, 1, 0.32, 1) flex min-h-0 grow basis-0 transition-all duration-500 has-[.row2tile:hover]:grow-[5]">
+            <div
+              class="group/tile tile-3 row2tile relative min-w-0 grow basis-0 overflow-hidden border-r border-white/5 bg-stone-800 transition-all duration-500 group-has-[.tile-1:hover]/grid:grow-[5] hover:grow-[5]">
+              <div
+                class="p-6 text-6xl font-black tracking-tighter opacity-20 transition-opacity duration-500 group-hover/grid:opacity-0 group-hover/tile:opacity-100 lg:p-10">
+                03</div>
+
+              <div
+                class="absolute top-24 left-0 flex w-[calc(100vw-80px)] flex-col gap-6 p-6 opacity-0 transition-all duration-500 group-hover/tile:opacity-100 lg:top-32 lg:w-[500px] lg:p-10">
+                <div>
+                  <h3 class="text-3xl leading-none font-black tracking-tighter uppercase lg:text-4xl">
+                    Pragmatic <br />
+                    Clean Architecture
+                  </h3>
+                  <p class="mt-4 text-sm leading-relaxed text-stone-300">Clean architectue in Spring Boot ensuring
+                    maintainability with separation of concerns trough vertical feature slices while choosing the
+                    pragmatic route with grouping dto's into the files owning them and stripping ghost interfaces to
+                    reduce a class mess.</p>
+                </div>
+
+                <div
+                  class="flex translate-y-4 flex-wrap gap-2 transition-transform delay-100 duration-500 group-hover/tile:translate-y-0">
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">Java</span>
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">Spring
+                    Boot</span>
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">DDD</span>
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">Hexagonal</span>
+                </div>
+
+                <div class="pt-4 opacity-0 transition-all delay-200 duration-500 group-hover/tile:opacity-100">
+                  <a href="https://github.com/ningelschlingel/pragmatic-clean-architecture" target="_blank"
+                    class="group/link inline-flex items-center gap-2 text-sm font-bold tracking-tighter uppercase">
+                    <span>View on GitHub</span>
+                    <svg class="h-4 w-4 transition-transform group-hover/link:translate-x-1" fill="none"
+                      stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="group/tile tile-4 row2tile relative min-w-0 grow basis-0 overflow-hidden bg-stone-900 transition-all duration-500 group-has-[.tile-2:hover]/grid:grow-[5] hover:grow-[5]">
+              <div
+                class="p-6 text-6xl font-black tracking-tighter opacity-20 transition-opacity duration-500 group-hover/grid:opacity-0 group-hover/tile:opacity-100 lg:p-10">
+                04</div>
+
+              <div
+                class="absolute top-24 left-0 flex w-[calc(100vw-80px)] flex-col gap-6 p-6 opacity-0 transition-all duration-500 group-hover/tile:opacity-100 lg:top-32 lg:w-[500px] lg:p-10">
+                <div>
+                  <h3 class="text-3xl leading-none font-black tracking-tighter uppercase lg:text-4xl">
+                    Digital Split <br />
+                    Flap Builder
+                  </h3>
+                  <p class="mt-4 text-sm leading-relaxed text-stone-300">Webapp for configuring and exporting a digital
+                    split-flap display.</p>
+                </div>
+
+                <div
+                  class="flex translate-y-4 flex-wrap gap-2 transition-transform delay-100 duration-500 group-hover/tile:translate-y-0">
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">UI
+                    / UX</span>
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">Angular</span>
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">Creative</span>
+                  <span
+                    class="border border-white/20 bg-white/5 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">Playful</span>
+                </div>
+
+                <div class="pt-4 opacity-0 transition-all delay-200 duration-500 group-hover/tile:opacity-100">
+                  <a href="https://github.com/ningelschlingel/clean-arch" target="_blank"
+                    class="group/link inline-flex items-center gap-2 text-sm font-bold tracking-tighter uppercase">
+                    <span>View on GitHub</span>
+                    <svg class="h-4 w-4 transition-transform group-hover/link:translate-x-1" fill="none"
+                      stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- <div
+        class="absolute inset-0 flex flex-col overflow-hidden bg-black text-white z-20 animate-in fade-in zoom-in-95 duration-500">
+
+        <div class="group/grid flex h-full w-full flex-col overflow-hidden bg-black text-white">
+          <div class="flex min-h-0 grow basis-0 transition-all duration-700 ease-in-out has-[.row1tile:hover]:grow-4">
+            <div
+              class="tile-1 row1tile relative min-w-0 grow basis-0 overflow-hidden bg-stone-900 transition-all duration-700 group-has-[.tile-3:hover]/grid:grow-4 hover:grow-4">
+              <div class="absolute p-10 text-6xl font-bold">01</div>
+            </div>
+
+            <div
+              class="tile-2 row1tile relative min-w-0 grow basis-0 overflow-hidden bg-indigo-900 transition-all duration-700 group-has-[.tile-4:hover]/grid:grow-4 hover:grow-4">
+              <div class="absolute p-10 text-6xl font-bold">02</div>
+            </div>
+          </div>
+
+          <div class="flex min-h-0 grow basis-0 transition-all duration-700 ease-in-out has-[.row2tile:hover]:grow-4">
+            <div
+              class="tile-3 row2tile relative min-w-0 grow basis-0 overflow-hidden bg-stone-800 transition-all duration-700 group-has-[.tile-1:hover]/grid:grow-4 hover:grow-4">
+              <div class="absolute p-10 text-6xl font-bold">03</div>
+            </div>
+
+            <div
+              class="tile-4 row2tile relative min-w-0 grow basis-0 overflow-hidden bg-stone-900 transition-all duration-700 group-has-[.tile-2:hover]/grid:grow-4 hover:grow-4">
+              <div class="absolute p-10 text-6xl font-bold">04</div>
+            </div>
+          </div>
+        </div>
+      </div> -->
+      </div>
+    </app-tile>
+
+    <!-- SECTION: OUR STUFF? -->
+    <app-tile tileTitle="OURS." tileSubtitle="DIVIDE & CONQUER" [status]="getTileStatus(3)" (select)="toggleTile(3)"
+      class="bg-teal-300">
+
+      <div preview class="space-y-12">
+        <div class="mt-auto opacity-0 transition-all duration-700 group-hover:opacity-100">
+          <div class="max-w-md space-y-6">
+            <p class="text-5xl leading-none font-[1000] tracking-tighter uppercase">
+              Start <br />
+              The <br />
+              Engine.
+            </p>
+            <p class="text-lg">
+              Collaborations starting from Q2 2026. <br />
+              Serious inquiries only.
+            </p>
+            <a href="mailto:jan@ningelschlingel.gen"
+              class="inline-block border-2 border-white px-8 py-4 text-sm font-black tracking-[0.2em] uppercase transition-all hover:bg-white hover:text-orange-600">Secure
+              Slot</a>
+          </div>
+        </div>
+      </div>
+
+      <div details>
+        <p class="text-black/70 italic">
+          Hier kommt dein ausführlicher Content rein, der nur im Full-Size Mode sichtbar ist.
+        </p>
+      </div>
+    </app-tile>
+  </div>
+
+  <!-- NAV -->
+  <app-nav #nav [class.grow-[10]]="nav.isOpen()"
+    class="flex min-h-0 grow basis-0 items-end overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] lg:hover:grow-10"></app-nav>
+</div>

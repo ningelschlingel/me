@@ -1,0 +1,120 @@
+<div class="flex h-svh w-full flex-col overflow-hidden bg-neutral-950 font-sans text-neutral-50 [--ease-out-expo:cubic-bezier(0.16,1,0.3,1)] selection:bg-white selection:text-black lg:flex-row">
+  <section class="group relative min-w-0 grow basis-0 overflow-hidden bg-[#E5E5E5] text-neutral-900 transition-all duration-700 ease-[var(--ease-out-expo)] hover:grow-[12] lg:hover:grow-[12]">
+    <div class="flex h-full flex-col p-6 lg:p-10">
+      <div class="flex items-baseline justify-between">
+        <h1 class="text-6xl font-[1000] tracking-tighter lg:text-7xl lg:[writing-mode:vertical-lr]">ME.</h1>
+        <span class="font-mono text-[10px] tracking-[0.3em] uppercase opacity-40 lg:hidden">Profile_01</span>
+      </div>
+
+      <div class="scrollbar-hide mt-8 flex-1 overflow-x-hidden overflow-y-auto pr-2 opacity-0 transition-all delay-100 duration-700 group-hover:opacity-100">
+        <div class="max-w-md space-y-12">
+          <div class="aspect-[4/5] w-full bg-neutral-300 grayscale transition-all duration-700 hover:grayscale-0">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=800" alt="Portrait" class="h-full w-full object-cover mix-blend-multiply" />
+          </div>
+          <div class="space-y-4">
+            <h2 class="text-4xl leading-[0.9] font-black uppercase">
+              Engineering <br />
+              Emotion.
+            </h2>
+            <p class="text-lg leading-relaxed tracking-tight">I don't just build websites; I architect digital physicalism. By leveraging GLSL and low-level motion APIs, I create interfaces that feel alive.</p>
+          </div>
+          <div class="grid grid-cols-2 gap-4 border-t border-neutral-900/10 pt-6">
+            <div>
+              <p class="text-[10px] font-bold tracking-widest uppercase">Philosophy</p>
+              <p class="mt-2 text-sm italic">"Brutalism meets buttery smooth motion."</p>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold tracking-widest uppercase">Location</p>
+              <p class="mt-2 text-sm underline underline-offset-4">Frankfurt, DE</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="group relative min-w-0 grow basis-0 overflow-hidden bg-indigo-600 transition-all duration-700 ease-[var(--ease-out-expo)] hover:grow-[12] lg:hover:grow-[8]">
+    <div class="flex h-full flex-col p-6 lg:p-10">
+      <h1 class="text-6xl font-[1000] tracking-tighter lg:text-7xl lg:[writing-mode:vertical-lr]">YOU.</h1>
+
+      <div class="scrollbar-hide mt-12 flex-1 overflow-y-auto pr-2 opacity-0 transition-all duration-700 group-hover:opacity-100">
+        <div class="max-w-md space-y-10">
+          <p class="text-5xl leading-[0.8] font-black tracking-tighter italic">
+            WE SPEAK <br />
+            THE SAME <br />
+            LANGUAGE.
+          </p>
+          <div class="h-px w-full bg-white/20"></div>
+          <p class="text-xl font-medium text-indigo-100">You're a founder, a creative director, or a studio lead who values performance as much as aesthetics. You need a partner who can translate "Big Ideas" into "Big Frames."</p>
+
+          <div class="space-y-2">
+            <p class="text-[10px] font-bold tracking-widest uppercase opacity-60">Success Stories</p>
+            <div class="flex gap-2">
+              <div class="h-32 w-full bg-white/5 p-4 transition-colors hover:bg-white/10">
+                <span class="font-mono text-xs">01/ Fintech_Redesign</span>
+              </div>
+              <div class="h-32 w-full bg-white/5 p-4 transition-colors hover:bg-white/10">
+                <span class="font-mono text-xs">02/ AI_Dashboard</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="group relative min-w-0 grow basis-0 overflow-hidden bg-neutral-900 transition-all duration-700 ease-[var(--ease-out-expo)] hover:grow-[12] lg:hover:grow-[14]">
+    <div class="flex h-full flex-col p-6 lg:p-10">
+      <h1 class="text-6xl font-[1000] tracking-tighter lg:text-7xl lg:[writing-mode:vertical-lr]">INDEX.</h1>
+
+      <div class="scrollbar-hide mt-12 flex-1 overflow-y-auto opacity-0 transition-all duration-700 group-hover:opacity-100">
+        <div class="grid grid-cols-1 gap-12 lg:grid-cols-2">
+          <div class="group/item cursor-pointer space-y-4">
+            <div class="relative aspect-video overflow-hidden bg-neutral-800">
+              <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800" class="h-full w-full object-cover transition-transform duration-700 group-hover/item:scale-110" />
+            </div>
+            <div class="flex justify-between">
+              <div>
+                <h3 class="font-black uppercase italic">Neural_Interface_v2</h3>
+                <p class="text-xs opacity-50">Experimental Lab / 2025</p>
+              </div>
+              <span class="text-xl">↗️</span>
+            </div>
+          </div>
+          <div class="group/item cursor-pointer space-y-4">
+            <div class="relative aspect-video overflow-hidden bg-neutral-800">
+              <img src="https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&q=80&w=800" class="h-full w-full object-cover transition-transform duration-700 group-hover/item:scale-110" />
+            </div>
+            <div class="flex justify-between">
+              <div>
+                <h3 class="font-black uppercase italic">Brutal_Typography</h3>
+                <p class="text-xs opacity-50">Branding Studio / 2024</p>
+              </div>
+              <span class="text-xl">↗️</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="group relative min-w-0 grow basis-0 overflow-hidden bg-orange-600 transition-all duration-700 ease-[var(--ease-out-expo)] hover:grow-[12] lg:hover:grow-[8]">
+    <div class="flex h-full flex-col p-6 lg:p-10">
+      <h1 class="text-6xl font-[1000] tracking-tighter lg:text-7xl lg:[writing-mode:vertical-lr]">OURS.</h1>
+
+      <div class="mt-auto opacity-0 transition-all duration-700 group-hover:opacity-100">
+        <div class="max-w-md space-y-6">
+          <p class="text-5xl leading-none font-[1000] tracking-tighter uppercase">
+            Start <br />
+            The <br />
+            Engine.
+          </p>
+          <p class="text-lg">
+            Collaborations starting from Q2 2026. <br />
+            Serious inquiries only.
+          </p>
+          <a href="mailto:jan@ningelschlingel.gen" class="inline-block border-2 border-white px-8 py-4 text-sm font-black tracking-[0.2em] uppercase transition-all hover:bg-white hover:text-orange-600">Secure Slot</a>
+        </div>
+      </div>
+    </div>
+  </section>

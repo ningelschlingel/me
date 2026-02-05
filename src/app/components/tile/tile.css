@@ -1,0 +1,14 @@
+.no-scrollbar {
+    /* IE und Edge */
+    -ms-overflow-style: none;
+    
+    /* Firefox */
+    scrollbar-width: none;
+
+    /* Safari und Chrome */
+    &::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+}
