@@ -28,17 +28,15 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* The colour behind the browser's own bars. Top: the colour of the tile at the top of the screen
-   (Home keeps --top up to date); bottom: the menu's ink. Safari samples the page edges for its
-   translucent bars, so the notch area continues the content and the bottom bar the menu. */
-@property --top {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #f3eee5;
-}
 html {
-  background: linear-gradient(to bottom, var(--top) 0 50%, var(--color-ink) 50% 100%);
-  transition: --top 0.7s var(--ease-snap);
+  background: var(--color-ink);
+}
+
+/* Until the first layout has settled (see Home), nothing transitions: the page appears in place. */
+html:not([data-ready]) *,
+html:not([data-ready]) *::before,
+html:not([data-ready]) *::after {
+  transition: none !important;
 }
 
 /* The window never scrolls, bounces or rubber-bands. Only panels inside it do. */

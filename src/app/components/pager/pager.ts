@@ -435,7 +435,7 @@ export class Pager {
         track.style.setProperty('--col', px);
         this.view = width;
         // Only content that really re-flows while visible fades; a revealed column just appears.
-        if (animate && resized) track.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 450, easing: 'ease-out' });
+        if (animate && resized && document.documentElement.dataset['ready'] !== undefined) track.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 450, easing: 'ease-out' });
       }
     }
     this.measure();

@@ -15,18 +15,11 @@
   overflow: hidden;
   cursor: pointer;
   transition: flex-grow 0.7s var(--ease-snap), visibility 0s;
-  animation: tile-in 0.9s var(--ease-snap) both;
-  animation-delay: calc(var(--i, 0) * 90ms);
 }
 /* Collapsed to nothing; leaves the paint and the tab order once it got there. */
 :host([data-state='hidden']) {
   visibility: hidden;
   transition: flex-grow 0.7s var(--ease-snap), visibility 0s 0.7s;
-}
-
-@keyframes tile-in {
-  from { clip-path: inset(0 100% 0 0); }
-  to { clip-path: inset(0); }
 }
 
 .head {

@@ -1,4 +1,4 @@
-import { Component, afterRenderEffect, computed, effect, inject, signal } from '@angular/core';
+import { Component, afterNextRender, afterRenderEffect, computed, effect, inject, signal } from '@angular/core';
 import { CHAPTERS, LINKEDIN, MAIL, PROJECTS, Project, ROLES, RoleId, STRAVA, roleById } from '../../content';
 import { CARDS, Columns, DECK_GROW, Viewport, WIDE, tileGrow } from '../../layout';
 import { RoleState } from '../../role-state';
@@ -71,13 +71,13 @@ export class Home {
   });
 
   constructor() {
-    // The colour behind the browser's top bar follows the tile at the top of the screen.
-    afterRenderEffect(() => {
-      const open = this.active();
-      const tiles = document.querySelectorAll('app-tile');
-      const top = tiles[open ?? 0];
-      if (top) document.documentElement.style.setProperty('--top', getComputedStyle(top).backgroundColor);
-    });
+    // The first frame is measured and corrected (tile frame, column widths) right after rendering.
+    // Transitions stay off until that has settled, so the page appears in place instead of wobbling in.
+    afterNextRender(() =>
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => (document.documentElement.dataset['ready'] = '')),
+      ),
+    );
 
     effect(() => {
       const i = this.active();

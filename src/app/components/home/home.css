@@ -12,6 +12,15 @@
   :host { flex-direction: row; }
 }
 
+/* Phones: rows have fractional heights, so the seam between two lands mid-pixel and the html
+   behind shows through as a flickering light line. Each row reaches 1px under the one above. */
+@media (width < 64rem) {
+  app-tile + app-tile {
+    margin-top: -1px;
+    padding-top: 1px;
+  }
+}
+
 .filter {
   padding: 0.5rem 0.8rem;
   border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
