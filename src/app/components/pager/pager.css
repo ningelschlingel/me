@@ -1,0 +1,157 @@
+/* Unencapsulated on purpose: pages are projected content. Every selector is scoped to app-pager. */
+
+app-pager {
+  --page-gap: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The clipping window. Horizontal motion is ours (transform + spring); vertical
+   pans and pinch-zoom stay with the browser. */
+app-pager .pager-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  outline: none;
+  touch-action: pan-y pinch-zoom;
+}
+app-pager .pager-viewport.dragging {
+  user-select: none;
+  cursor: grabbing;
+}
+
+/* "There is more this way": a glow and a chevron at the right edge, pulsing twice, once. */
+app-pager .pager-hint {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 3;
+  display: grid;
+  place-items: center end;
+  width: min(5rem, 22%);
+  padding-right: 0.4rem;
+  background: linear-gradient(to left, color-mix(in srgb, currentColor 18%, transparent), transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+app-pager .pager-hint svg { width: 1.5rem; }
+app-pager .pager-hint.on { animation: pager-hint 1.4s ease-in-out 2; }
+app-pager .pager-hint.on svg { animation: pager-hint-x 1.4s ease-in-out 2; }
+@keyframes pager-hint {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+@keyframes pager-hint-x {
+  50% { translate: -0.35rem 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Still tell it, just without the pulse: a gentle, single fade. */
+  app-pager .pager-hint.on, app-pager .pager-hint.on svg { animation: pager-hint 2.8s ease-in-out 1 !important; }
+}
+
+/* Project cards lift on hover: give them room inside the clipping window. */
+app-pager.cards .pager-track { padding-block: 0.5rem 1rem; }
+
+app-pager .pager-track {
+  position: relative; /* offsetParent for the pages */
+  display: flex;
+  gap: var(--page-gap);
+  height: 100%;
+  will-change: transform;
+}
+
+/* A page: one of --cols equal columns (px, set by the pager), as tall as the track, scrolls by itself. */
+app-pager .pager-track {
+  --cols: 1;
+  --col: 100%;
+}
+app-pager .pager-track > * {
+  --span: 1;
+  flex: 0 0 calc(var(--col) * var(--span) + var(--page-gap) * (var(--span) - 1));
+  min-width: 0;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y pinch-zoom; /* pages are scroll containers: repeat it here */
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, currentColor 30%, transparent) transparent;
+}
+
+/* Fade out the bottom edge while there is more to scroll (where supported). */
+app-pager .pager-track > [data-span='2'] { --span: min(2, var(--cols)); }
+
+@property --fade {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@supports (animation-timeline: scroll()) {
+  /* Only pages that really scroll get the mask (set from pager.ts): masks cost extra compositing. */
+  app-pager .pager-track > .can-scroll {
+    mask-image: linear-gradient(#000 calc(100% - var(--fade)), transparent);
+    animation: page-fade linear both;
+    animation-timeline: scroll(self);
+  }
+}
+@keyframes page-fade {
+  0%, 90% { --fade: 3rem; }
+  100% { --fade: 0px; }
+}
+
+app-pager .pager-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-shrink: 0;
+  padding-top: 1rem;
+}
+/* Phones: the screen edge is the edge. Text keeps a small inset (--inset), cards go full width. */
+@media (width < 64rem) {
+  app-pager { --inset: 1rem; }
+  app-pager .pager-track > * { padding-inline: var(--inset); }
+  app-pager.cards { --inset: 0px; }
+  app-pager .pager-nav { padding: 0.6rem var(--inset, 1rem) 0; }
+}
+app-pager .pager-dots {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.375rem;
+}
+app-pager .pager-btn {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2rem;
+  cursor: pointer;
+  transition: translate 0.3s var(--ease-pop), opacity 0.3s;
+}
+app-pager .pager-btn img { width: 100%; filter: var(--icon-filter, none); }
+app-pager .pager-btn:hover:not(:disabled) { translate: 0.25rem 0; }
+app-pager .pager-btn[aria-label^='Prev']:hover:not(:disabled) { translate: -0.25rem 0; }
+/* Phones and touch: swiping is the way; the dots only tell where you are.
+   (After the rules above on purpose: same specificity, so the later one wins.) */
+@media (hover: none), (pointer: coarse), (width < 64rem) {
+  app-pager .pager-btn { display: none; }
+}
+app-pager .pager-btn:disabled { opacity: 0.2; cursor: default; }
+
+app-pager .pager-dots button {
+  width: 0.5rem;
+  height: 0.5rem;
+  background: currentColor;
+  opacity: 0.25;
+  cursor: pointer;
+  transition: width 0.4s var(--ease-snap), opacity 0.3s;
+}
+app-pager .pager-dots button.on { width: 1.75rem; opacity: 1; }
+
+@media (width >= 64rem) {
+  app-pager { --page-gap: 3rem; }
+}

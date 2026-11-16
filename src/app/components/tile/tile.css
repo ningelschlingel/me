@@ -1,14 +1,137 @@
-.no-scrollbar {
-    /* IE und Edge */
-    -ms-overflow-style: none;
-    
-    /* Firefox */
-    scrollbar-width: none;
+/* Rows on small screens, columns from 64rem. flex-grow comes from layout.ts as an
+   inline style; this file only animates it. Content never grows the tile: it
+   scrolls or pages instead. */
+:host {
+  --pad: 1rem;
+  --pad-y: clamp(0.5rem, 2.4dvh, 1.25rem);
+  --title: clamp(1.5rem, 6dvh, 3.75rem);
 
-    /* Safari und Chrome */
-    &::-webkit-scrollbar {
-        display: none !important;
-        width: 0 !important;
-        height: 0 !important;
-    }
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  cursor: pointer;
+  transition: flex-grow 0.7s var(--ease-snap), visibility 0s;
+  animation: tile-in 0.9s var(--ease-snap) both;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+/* Collapsed to nothing; leaves the paint and the tab order once it got there. */
+:host([data-state='hidden']) {
+  visibility: hidden;
+  transition: flex-grow 0.7s var(--ease-snap), visibility 0s 0.7s;
+}
+
+@keyframes tile-in {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0); }
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  flex-shrink: 0;
+  padding: var(--pad-y) calc(var(--pad) + 3rem) var(--pad-y) var(--pad); /* room for the toggle */
+}
+
+.title {
+  font-size: var(--title);
+  line-height: 0.85;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+}
+
+.sub {
+  font: 500 0.7rem/1 var(--mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+:host([data-state='peek']) .sub,
+:host([data-state='active']) .sub { opacity: 0.6; }
+
+/* Phones: a clear, always visible button. Desktop: see below. */
+.toggle {
+  position: absolute;
+  z-index: 2; /* pages create their own layers (mask, scroll); stay above them */
+  top: calc(var(--pad-y) - 0.35rem);
+  right: var(--pad);
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 2px solid currentColor;
+  cursor: pointer;
+}
+.toggle svg {
+  width: 1.1rem;
+  transition: rotate 0.5s var(--ease-pop);
+}
+:host([data-state='active']) .toggle svg { rotate: 45deg; }
+
+.body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 0 0.5rem; /* phones: pages bring their own inset, dots sit close to the menu */
+  opacity: 0;
+  visibility: hidden;
+  translate: 0 2rem;
+  transition: opacity 0.3s, translate 0.5s var(--ease-snap), visibility 0s 0.3s;
+}
+/* Content arrives once the tile has made most of its room: no fighting over space. */
+:host([data-state='peek']) .body,
+:host([data-state='active']) .body {
+  opacity: 1;
+  visibility: visible;
+  translate: none;
+  transition: opacity 0.45s 0.25s, translate 0.7s 0.2s var(--ease-snap), visibility 0s;
+}
+
+@media (width >= 64rem) {
+  :host {
+    flex-direction: row;
+    --pad: 2.5rem;
+    --pad-y: var(--pad);
+    --title: clamp(3.5rem, 6vw, 6rem);
+  }
+
+  .head {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    padding: var(--pad) 2rem;
+    writing-mode: vertical-lr;
+  }
+
+  /* The cursor badge does the talking; the button stays for keyboards and as an anchor when open. */
+  .toggle {
+    top: auto;
+    right: auto;
+    bottom: var(--pad);
+    left: 2rem;
+    border: 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .toggle:focus-visible,
+  :host([data-state='active']) .toggle { opacity: 1; }
+
+  .body { padding: var(--pad) var(--pad) var(--pad) 0; translate: 3rem 0; }
+}
+
+:host([data-state='active']) .head { cursor: pointer; }
+
+/* Reduced motion: the tile still glides (it explains where you went), content just fades. */
+@media (prefers-reduced-motion: reduce) {
+  .body { translate: none !important; }
 }

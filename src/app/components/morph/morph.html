@@ -1,0 +1,14 @@
+<div class="frame">
+  <img #img src="/me.jpg" alt="Portrait of Jan" />
+  <div #stage class="stage" aria-hidden="true">
+    @for (s of slices; track $index) {
+      <div class="slice" [style.top]="s.top" [style.background-position]="s.pos"></div>
+    }
+  </div>
+  <div #flash class="flash"></div>
+</div>
+<div #sparks class="sparks" aria-hidden="true">
+  @for (color of burst; track $index) {
+    <i [style.background]="color"></i>
+  }
+</div>

@@ -1,7 +1,149 @@
-/* You can add global styles to this file, and also import other style files */
+@import 'tailwindcss';
 
-@import "tailwindcss";
+/* Palette: two neutrals carry the page, two colours carry the meaning.
+   paper/ink   – warm, editorial, calm: the expert part. Ink also frames the page: the menu.
+   cobalt      – trust and competence: what you need (YOU)
+   signal      – energy and action: answers, calls to action, working together (OURS)
+   graphite    – a quiet gallery, so project images bring the colour (INDEX). Same warm-neutral
+                 family as ink (no blue cast against the brown-black), one clear step lighter,
+                 so the two sit together like paper stock and print, never melting into each other
+   mango       – one warm spark, used sparingly (the polished ?! in YOU, the lenses' glow)
+   Cobalt and signal are complementary: playful together, used sparingly. */
+@theme {
+  --color-paper: #f3eee5;
+  --color-bone: #fbfaf7;
+  --color-ink: #171614;
+  --color-cobalt: #2b44d8;
+  --color-signal: #ff5b3a;
+  --color-signal-deep: #d43f1f; /* the accent as text on paper (contrast ≥ 3:1 for large type) */
+  --color-mango: #ffa630;
+  --color-night: #2b2a27;
+  --color-night-2: #363430;
+  --color-night-3: #44423d; /* image placeholders */
+}
 
+:root {
+  --ease-snap: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-pop: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* The colour behind the browser's own bars. Top: the colour of the tile at the top of the screen
+   (Home keeps --top up to date); bottom: the menu's ink. Safari samples the page edges for its
+   translucent bars, so the notch area continues the content and the bottom bar the menu. */
+@property --top {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #f3eee5;
+}
+html {
+  background: linear-gradient(to bottom, var(--top) 0 50%, var(--color-ink) 50% 100%);
+  transition: --top 0.7s var(--ease-snap);
+}
+
+/* The window never scrolls, bounces or rubber-bands. Only panels inside it do. */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+body {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Shared building blocks, so templates stay readable.
+   Type scale, one weight per role:
+     tile title 900 (identity) · .page-title 800 · .lead 500 · .copy 400 · .label/.chip mono 500.
+   Black (900) inside a page is reserved for the one punchline. */
 @layer components {
+  /* Every pager page has the same anatomy: label row on a rule, title, and a
+     foot that sits at the bottom. That keeps tall pages full and columns aligned. */
+  .page {
+    @apply flex flex-col gap-4 border-t-2 border-current pt-3 lg:gap-6 lg:pt-4;
+    container-type: inline-size;
+  }
+  /* A page with a sketch: content sits between the sketch's back and front layer. */
+  .page.scene {
+    @apply relative isolate;
+  }
+  .page.scene > :not(app-sketch) {
+    @apply relative z-1;
+  }
+  /* The sketch's stage: all the free space. The sketch itself may reach beyond it, up into
+     the title's corner (see Sketch.resize), so a page never has to scroll to make room. */
+  .page.scene > .stage {
+    flex: 1 0 var(--stage-min, 0px);
+    --stage-min: 0px;
+  }
+  @media (width >= 64rem) {
+    .page.scene > .stage { --stage-min: 6rem; }
+  }
+  .page-label {
+    @apply flex justify-between gap-4;
+  }
+  .page-title {
+    @apply leading-[0.9] font-extrabold tracking-[-0.035em] uppercase;
+    /* Sized by the column, so a 13-letter word always fits. */
+    font-size: clamp(1.75rem, min(11.5cqi, 6.5dvh), 3.75rem);
+  }
+  .page-foot {
+    @apply mt-auto flex flex-col items-start gap-4 lg:gap-5;
+  }
+  .label {
+    @apply text-[0.7rem] font-medium tracking-[0.14em] uppercase opacity-65;
+    font-family: var(--mono);
+  }
+  .lead {
+    @apply text-lg leading-snug font-medium tracking-tight text-balance lg:text-xl;
+  }
+  .copy {
+    @apply leading-relaxed font-normal opacity-75 lg:text-[1.0625rem];
+  }
+  .chip {
+    @apply border border-current/35 px-2 py-1 text-[0.65rem] font-medium tracking-[0.1em] uppercase;
+    font-family: var(--mono);
+  }
+  .chips {
+    @apply flex flex-wrap gap-1.5;
+  }
+  .link {
+    @apply text-sm font-bold tracking-tight underline decoration-2 underline-offset-4 hover:italic;
+  }
+  .btn {
+    @apply inline-flex cursor-pointer items-center gap-3 border-2 border-current px-5 py-3 text-xs font-bold tracking-[0.16em] uppercase;
+    box-shadow: 4px 4px 0 currentColor;
+    transition: translate 0.3s var(--ease-pop), box-shadow 0.3s var(--ease-pop);
+  }
+  .btn::after {
+    content: '→';
+    transition: translate 0.3s var(--ease-pop);
+  }
+  .btn:hover {
+    translate: -2px -2px;
+    box-shadow: 6px 6px 0 currentColor;
+  }
+  .btn:hover::after {
+    translate: 0.25rem 0;
+  }
+  .btn:active {
+    translate: 2px 2px;
+    box-shadow: 0 0 0 currentColor;
+  }
+}
 
+/* Reduced motion: calm, not frozen. Layout still glides and things fade; nothing flies in,
+   flips or bounces. (Components drop their own big moves: morph twist, kick, swipe hint.) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
 }

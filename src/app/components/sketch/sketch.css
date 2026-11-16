@@ -1,0 +1,19 @@
+/* Covers exactly its card and never creates its own stacking context (no z-index here),
+   so the two canvases can sit on either side of the card's content. */
+:host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.back { z-index: 0; }
+.front { z-index: 2; }
+
+/* While its tile is moving the sketch rests; it fades back in once the layout has settled. */
+:host { transition: opacity 0.3s; }
+:host(.settling) { opacity: 0; transition: none; }

@@ -3,21 +3,15 @@ import { App } from './app';
 
 describe('App', () => {
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [App],
-    }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [App] }).compileComponents();
   });
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
-  });
-
-  it('should render title', async () => {
+  it('renders the four tiles and the contact rail', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, ningelschlingel');
+    const el = fixture.nativeElement as HTMLElement;
+    const titles = Array.from(el.querySelectorAll('app-tile .title')).map((t) => t.textContent?.trim());
+    expect(titles).toEqual(['ME.', 'YOU.', 'INDEX.', 'OURS.']);
+    expect(el.querySelector('app-nav')).toBeTruthy();
   });
 });
