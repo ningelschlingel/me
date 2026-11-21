@@ -49,8 +49,8 @@
   text-transform: uppercase;
 }
 
-/* Filters. Desktop: a bar above the pages. Phones: on the index's contents page (.filters-inline),
-   and an active one stands in the tile's header line (.chip-filter). */
+/* Filters. Desktop: a row above the pages. Phones: one bar on the index's contents page
+   (.picker), and an active filter stands in the tile's header line (.chip-filter). */
 .filters {
   display: none;
 }
@@ -62,14 +62,82 @@
     margin-bottom: 1.25rem;
   }
 }
-.filters-inline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-}
-.filters-inline .filter { padding: 0.7rem 0.8rem; } /* a finger-sized target */
 
-/* The filter in the header line: a solid block in the accent (the slates' role colour), so it
+/* The picker: a square bar like every control with type in it. The value on the left, the
+   filter glyph on the right; open, the glyph turns into the × and the options drop over the
+   list below (they never push it down, so the page never has to scroll). */
+.picker {
+  position: relative;
+  z-index: 3;
+}
+.picker-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 2.75rem;
+  padding: 0 0.8rem;
+  border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+  font: 500 0.7rem/1 var(--mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.picker-bar:active,
+.picker.open .picker-bar { border-color: currentColor; }
+.picker-count { opacity: 0.6; }
+.picker-icon {
+  width: 1rem;
+  overflow: visible;
+}
+.picker-icon path {
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: butt;
+  transform-origin: 8px 8px;
+  transition: opacity 0.2s, scale 0.2s;
+}
+.picker-icon .cross,
+.picker.open .picker-icon .funnel { opacity: 0; scale: 0.6; }
+.picker.open .picker-icon .cross { opacity: 1; scale: 1; }
+
+.picker-options {
+  position: absolute;
+  inset: 100% 0 auto;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid currentColor;
+  border-top: 0;
+  background: var(--color-night);
+  clip-path: inset(0 0 100% 0);
+  visibility: hidden;
+  transition: clip-path 0.18s ease-out, visibility 0s 0.18s;
+}
+.picker.open .picker-options {
+  clip-path: inset(0 0 -1px 0);
+  visibility: visible;
+  transition: clip-path 0.18s ease-out, visibility 0s;
+}
+.picker-option {
+  height: 2.75rem;
+  padding: 0 0.8rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  font: 500 0.7rem/1 var(--mono);
+  letter-spacing: 0.15em;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.picker-option.on {
+  background: var(--color-paper);
+  color: var(--color-night);
+}
+@media (prefers-reduced-motion: reduce) {
+  .picker-options { transition: none !important; }
+}
+
+/* The filter in the header line: a solid block in the accent (orange on INDEX means "filtered"), so it
    reads as a state, not a label. A tap clears it. */
 .chip-filter {
   position: relative;
@@ -122,10 +190,18 @@
   font-size: clamp(1.5rem, min(8.5cqi, 5dvh), 3rem);
 }
 
-/* Title image. Until a real one exists (or if it fails), a hatched placeholder shows through.
-   Always the page's full width. It is the one thing on the page that gives way: when text and
-   links need the room (short screens, long pitches) it gets shorter, never narrower. */
+/* Title image, and its caption under it. Until a real image exists (or if it fails), a hatched
+   placeholder shows through. Always the page's full width. It is the one thing on the page that
+   gives way: when text and links need the room (short screens, long pitches) the picture gets
+   shorter, never narrower. */
 .shot {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+.frame {
   position: relative;
   flex: 0 1 auto;
   width: 100%;
@@ -138,7 +214,7 @@
     var(--color-night-3);
 }
 @media (width >= 64rem) {
-  .shot { max-height: 34dvh; }
+  .frame { max-height: 34dvh; }
 }
 .shot img {
   position: absolute;
@@ -148,35 +224,22 @@
   object-fit: cover;
   transition: scale 0.8s var(--ease-snap);
 }
-/* The slate: a solid ink strip on the image's lower edge with one stamped mono line. No blur,
-   no shadow: it reads as a label on a contact sheet. The line never wraps; tags that would
-   start a second line are cut off by the strip's height. */
-.slate {
-  position: absolute;
-  inset: auto 0 0;
+/* The tags: one quiet mono line under the picture, separated by round points. It may wrap. */
+.tags {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  column-gap: 0.6rem;
-  height: 1.5rem;
-  padding: 0 0.6rem;
-  overflow: hidden;
-  background: var(--color-ink);
-  color: var(--color-paper);
-  font: 500 0.625rem/1.5rem var(--mono);
+  gap: 0.4rem 1.25em;
+  flex: none;
+  margin-top: 0.75rem;
+  font: 500 0.625rem/1.2 var(--mono);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  white-space: nowrap;
 }
-.slate-roles { color: var(--color-signal); }
-.slate-tag + .slate-tag::before {
-  content: '/';
-  margin-right: 0.6rem;
-  opacity: 0.5;
-}
+.tags .dots { opacity: 0.6; }
 /* Desktop shows the roles in the label row already. */
 @media (width >= 64rem) {
-  .slate-roles { display: none; }
+  .tags-roles { display: none; }
 }
 
 /* Pointing at a project's link brings its image a little closer. */

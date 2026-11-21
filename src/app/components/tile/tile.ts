@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, inject, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, effect, inject, input, output, signal } from '@angular/core';
 import { TileState, Viewport } from '../../layout';
 import { canScroll } from '../../scroll';
 
@@ -46,6 +46,14 @@ export class Tile {
   private readonly destroyRef = inject(DestroyRef);
   private down: { x: number; y: number } | null = null;
   private swipe: { x: number; y: number; t: number; from: Element } | null = null;
+  /** The last touch, to tell a tap from a drag, a hold or a pinch. */
+  private touch: { x: number; y: number; t: number; fingers: number } | null = null;
+  private tapped = false;
+  private touchedAt = -Infinity;
+  /** When a page in this tile last scrolled (scroll events don't bubble: see the capture listener). */
+  scrolled = -Infinity;
+  /** When this tile last opened. */
+  private openedAt = -Infinity;
 
   readonly open = computed(() => this.state() === 'peek' || this.state() === 'active');
 
@@ -55,9 +63,10 @@ export class Tile {
   /**
    * Phones: the menu opening over an open tile takes half the screen. The tile still gives it
    * the room, but its content keeps the height it had (--body-h): nothing reflows or shrinks,
-   * the menu simply covers the lower half until it closes again.
+   * the menu simply covers the lower half until it closes again. It stays pinned until the menu
+   * has slid all the way back, so nothing snaps small and grows again on the way out.
    */
-  readonly pinned = computed(() => this.state() === 'active' && !this.viewport.desktop() && this.viewport.navOpen());
+  readonly pinned = computed(() => this.state() === 'active' && !this.viewport.desktop() && this.viewport.navCovering());
 
   /** The tile's final width: rows always span the screen, columns get their share of the deck. */
   readonly targetWidth = computed(() =>
@@ -78,8 +87,17 @@ export class Tile {
       if (frame > 0 && Math.abs(frame - this.viewport.frame()) > 0.5) this.viewport.frame.set(frame);
     });
 
+    effect(() => {
+      if (this.state() === 'active') this.openedAt = performance.now();
+    });
+
     // The body's height while nothing covers it, for pinning (see `pinned`).
     afterNextRender(() => {
+      // Pages scroll inside the tile; scroll events don't bubble, so listen on the way down.
+      const onScroll = (e: Event) => (this.scrolled = e.timeStamp);
+      this.host.addEventListener('scroll', onScroll, { capture: true, passive: true });
+      this.destroyRef.onDestroy(() => this.host.removeEventListener('scroll', onScroll, { capture: true }));
+
       const body = this.host.querySelector<HTMLElement>(':scope > .body');
       if (!body || typeof ResizeObserver === 'undefined') return;
       const ro = new ResizeObserver(() => {
@@ -123,6 +141,8 @@ export class Tile {
 
   onTouchStart(event: TouchEvent) {
     const t = event.touches[0];
+    // A touch that stops a page's momentum scroll is a catch, not a tap.
+    this.touch = event.timeStamp - this.scrolled < 150 ? null : { x: t.clientX, y: t.clientY, t: event.timeStamp, fingers: event.touches.length };
     this.swipe = this.state() === 'active' && !this.viewport.desktop() && event.touches.length === 1
       ? { x: t.clientX, y: t.clientY, t: event.timeStamp, from: event.target as Element }
       : null;
@@ -134,6 +154,12 @@ export class Tile {
    * that way, so reading and horizontal paging are never in its way.
    */
   onTouchEnd(event: TouchEvent) {
+    const touch = this.touch;
+    const end = event.changedTouches[0];
+    this.tapped =
+      !!touch && touch.fingers === 1 && event.timeStamp - touch.t < 500 && Math.hypot(end.clientX - touch.x, end.clientY - touch.y) < 10;
+    this.touch = null;
+    this.touchedAt = performance.now();
     const s = this.swipe;
     this.swipe = null;
     if (!s || this.state() !== 'active') return;
@@ -146,19 +172,27 @@ export class Tile {
   }
 
   /**
-   * A click anywhere opens a closed tile. An open one closes from its title bar, and on desktop
-   * also from any spot that isn't a control, unless the click was a drag or a text selection.
+   * A click anywhere opens a closed tile, and anywhere that isn't a control closes an open one,
+   * unless it was really a drag, a text selection, or (phones) not a clean tap. On phones the
+   * first tap only removes the top layer: with the menu open, it closes the menu.
    */
   onClick(event: MouseEvent) {
     const target = event.target as Element;
     if (target.closest(INTERACTIVE)) return;
+    const phone = !this.viewport.desktop();
+    if (phone && this.viewport.menu()) return this.viewport.menu.set(false);
     if (this.state() !== 'active') return this.activate.emit();
     if (target.closest('.head')) return this.dismiss.emit();
-    // Phones: only the header line closes. A tap on a page is reading, or poking a sketch.
-    if (!this.viewport.desktop()) return;
+    if (getSelection?.()?.toString()) return;
 
+    if (phone && performance.now() - this.touchedAt < 800) {
+      // Taps only (no drag, hold or pinch), and not the second half of the tap that opened it.
+      const tapped = this.tapped;
+      this.tapped = false;
+      if (tapped && performance.now() - this.openedAt > 600) this.dismiss.emit();
+      return;
+    }
     const moved = this.down && Math.hypot(event.clientX - this.down.x, event.clientY - this.down.y) > 6;
-    const selecting = !!getSelection?.()?.toString();
-    if (!moved && !selecting) this.dismiss.emit();
+    if (!moved) this.dismiss.emit();
   }
 }

@@ -1,5 +1,4 @@
 import {
-  easeOut,
   Scene,
   Stroke,
   TAU,
@@ -18,7 +17,6 @@ import {
   rotAxis,
   rotX,
   rotY,
-  rotZ,
   scale,
   span,
   sub,
@@ -150,134 +148,118 @@ export const architect: Scene = (t) => {
   });
 };
 
-// ── Embedded: an old tube TV; something knocks, the screen cracks, a Pi Pico bursts out ──────
+// ── Embedded & IoT: a mesh of devices; a pulse crosses it and every node it reaches twitches ──
 
-const roundRect = (cx: number, cy: number, w: number, h: number, r: number, z: (x: number, y: number) => number): V3[] => {
-  const pts: V3[] = [];
-  const corners = [[w / 2 - r, h / 2 - r, 0], [-w / 2 + r, h / 2 - r, 1], [-w / 2 + r, -h / 2 + r, 2], [w / 2 - r, -h / 2 + r, 3]];
-  for (const [x, y, q] of corners)
-    for (let i = 0; i <= 6; i++) {
-      const a = (Math.PI / 2) * (q + i / 6);
-      const px = cx + x + r * Math.cos(a), py = cy + y + r * Math.sin(a);
-      pts.push([px, py, z(px, py)]);
-    }
-  pts.push(pts[0]);
-  return pts;
-};
-const ring2 = (c: V3, r: number, n = 10): V3[] =>
-  Array.from({ length: n + 1 }, (_, i) => add(c, [r * Math.cos((TAU * i) / n), r * Math.sin((TAU * i) / n), 0]));
+const MESH = 14;
+/** Devices: a golden-angle disc, jittered and lifted into a loose cloud, so they spread evenly with no clumps. */
+const NODES: V3[] = Array.from({ length: MESH }, (_, i) => {
+  const r = 0.95 * Math.sqrt((i + 0.5) / MESH);
+  const a = i * 2.39996;
+  const x = r * Math.cos(a) * 1.15 + 0.16 * (rand(i, 60) - 0.5);
+  const z = r * Math.sin(a) * 0.85 + 0.16 * (rand(i, 61) - 0.5);
+  return [x, 0.75 * (rand(i, 62) - 0.5) + 0.2 * (1 - r * r), z];
+});
+const gap = (i: number, j: number) => Math.hypot(...sub(NODES[i], NODES[j]));
 
-const FRONT_Z = 0.34;
-const SCREEN = { x: -0.13, y: 0.07, w: 0.92, h: 0.7 };
-/** The CRT bulges towards you. */
-const glass = (x: number, y: number) =>
-  FRONT_Z + 0.02 + 0.05 * (1 - ((x - SCREEN.x) / (SCREEN.w / 2)) ** 2 * 0.5 - ((y - SCREEN.y) / (SCREEN.h / 2)) ** 2 * 0.5);
-const HIT: V3 = [SCREEN.x + 0.06, SCREEN.y + 0.04, 0];
-
-const TV: Stroke[] = (() => {
-  const out: Stroke[] = [];
-  const front = roundRect(0, 0.05, 1.36, 1.0, 0.12, () => FRONT_Z);
-  out.push({ pts: front, weight: 1.3 });
-  out.push({ pts: roundRect(SCREEN.x, SCREEN.y, SCREEN.w, SCREEN.h, 0.14, glass), weight: 1.1 });
-  // the cabinet tapers to the back, like a real CRT
-  const back = roundRect(0, 0.08, 0.84, 0.64, 0.08, () => -0.5);
-  out.push({ pts: back, weight: 0.9 });
-  for (const [fx, fy, bx, by] of [[-0.62, 0.5, -0.38, 0.36], [0.62, 0.5, 0.38, 0.36], [0.62, -0.4, 0.38, -0.2], [-0.62, -0.4, -0.38, -0.2]])
-    out.push({ pts: [[fx, fy, FRONT_Z], [bx, by, -0.5]], weight: 0.9 });
-  // knobs and the speaker grille
-  out.push({ pts: ring2([0.5, 0.27, FRONT_Z + 0.01], 0.065), weight: 1 });
-  out.push({ pts: ring2([0.5, 0.05, FRONT_Z + 0.01], 0.065), weight: 1 });
-  for (let k = 0; k < 3; k++) out.push({ pts: [[0.42, -0.17 - k * 0.06, FRONT_Z], [0.58, -0.17 - k * 0.06, FRONT_Z]], weight: 0.6 });
-  // rabbit ears
-  out.push({ pts: Array.from({ length: 7 }, (_, i) => [0.1 * Math.cos((Math.PI * i) / 6), 0.55 + 0.06 * Math.sin((Math.PI * i) / 6), -0.05] as V3), weight: 1 });
-  out.push({ pts: [[-0.03, 0.6, -0.05], [-0.4, 1.0, -0.12]], weight: 1 });
-  out.push({ pts: [[0.03, 0.6, -0.05], [0.33, 1.05, 0.05]], weight: 1 });
-  out.push({ pts: ring2([-0.4, 1.0, -0.12], 0.03, 8), weight: 1 });
-  out.push({ pts: ring2([0.33, 1.05, 0.05], 0.03, 8), weight: 1 });
-  // little legs
-  for (const x of [-0.48, 0.48]) out.push({ pts: [[x, -0.45, 0.2], [x * 1.12, -0.64, 0.26]], weight: 1.1 });
+/** Links: every node to its three nearest neighbours (each pair once), fixed on the rest positions. */
+const LINKS: [number, number][] = (() => {
+  const seen = new Set<string>();
+  const out: [number, number][] = [];
+  NODES.forEach((_, i) =>
+    NODES.map((_, j) => j)
+      .filter((j) => j !== i && gap(i, j) < 0.75)
+      .sort((a, b) => gap(i, a) - gap(i, b))
+      .slice(0, 3)
+      .forEach((j) => {
+        const key = `${Math.min(i, j)}-${Math.max(i, j)}`;
+        if (!seen.has(key)) (seen.add(key), out.push([Math.min(i, j), Math.max(i, j)]));
+      }),
+  );
   return out;
 })();
 
-/** Crack rays from the impact point: fixed points per ray, grown by `g`. */
-const CRACKS: V3[][] = Array.from({ length: 7 }, (_, k) => {
-  const a = (TAU * k) / 7 + rand(k, 40) * 0.6;
-  const len = 0.24 + 0.2 * rand(k, 41);
-  return Array.from({ length: 5 }, (_, j) => {
-    const r = (len * j) / 4;
-    const kink = j === 0 ? 0 : (rand(k * 5 + j, 42) - 0.5) * 0.5;
-    const x = HIT[0] + r * Math.cos(a + kink), y = HIT[1] + r * Math.sin(a + kink);
-    return [x, y, glass(x, y) + 0.003] as V3;
-  });
-});
-const grow = (pts: V3[], g: number): V3[] => {
-  const n = pts.length - 1;
-  return pts.map((_, j) => {
-    const at = Math.min(j / n, g) * n;
-    const i = Math.min(n - 1, Math.floor(at));
-    return lerp3(pts[i], pts[i + 1], at - i);
-  });
-};
-
-function pico(): Stroke[] {
-  const w = 0.11, h = 0.25;
-  const out: Stroke[] = [
-    { pts: [[-w, -h, 0], [w, -h, 0], [w, h, 0], [-w, h, 0], [-w, -h, 0]], weight: 1.1 },
-    { pts: [[-0.045, -0.045, 0.005], [0.045, -0.045, 0.005], [0.045, 0.045, 0.005], [-0.045, 0.045, 0.005], [-0.045, -0.045, 0.005]], fill: 'accent', weight: 0.7 },
-    { pts: [[-0.035, h, 0], [-0.035, h + 0.04, 0], [0.035, h + 0.04, 0], [0.035, h, 0]], weight: 0.8 },
-  ];
-  for (let i = 0; i < 6; i++) {
-    const y = -h + 0.05 + (i * (2 * h - 0.1)) / 5;
-    out.push({ pts: ring2([-w + 0.025, y, 0], 0.011, 6), weight: 0.5 });
-    out.push({ pts: ring2([w - 0.025, y, 0], 0.011, 6), weight: 0.5 });
+/** Distance along the links from `origin` to every node, and the node each was reached from. */
+function spread(origin: number) {
+  const dist = NODES.map(() => Infinity);
+  const from = NODES.map(() => -1);
+  dist[origin] = 0;
+  const open = new Set(NODES.map((_, i) => i));
+  while (open.size) {
+    let i = -1;
+    for (const k of open) if (i < 0 || dist[k] < dist[i]) i = k;
+    open.delete(i);
+    if (dist[i] === Infinity) break;
+    for (const [a, b] of LINKS) {
+      const j = a === i ? b : b === i ? a : -1;
+      if (j >= 0 && open.has(j) && dist[i] + gap(i, j) < dist[j]) (dist[j] = dist[i] + gap(i, j)), (from[j] = i);
+    }
   }
-  return out;
+  return { dist, from };
 }
-const PICO = pico();
-const SHARDS = Array.from({ length: 6 }, (_, k) => {
-  const a = (TAU * k) / 6 + rand(k, 50);
-  return { dir: [Math.cos(a), Math.sin(a), 0] as V3, size: 0.04 + 0.03 * rand(k, 51), spin: norm([rand(k, 52) - 0.5, rand(k, 53) - 0.5, 1]) };
-});
+
+/** Two pulses per loop, there and back between the two devices furthest apart along the links. */
+const PULSES = (() => {
+  let a = 0, b = 0, far = -1;
+  NODES.forEach((_, i) => spread(i).dist.forEach((d, j) => Number.isFinite(d) && d > far && ((far = d), (a = i), (b = j))));
+  return [a, b].map((origin, k) => {
+    const { dist, from } = spread(origin);
+    // The way the pulse was heading when it arrived: the shake's direction, from the rest positions.
+    const centre = scale(NODES.reduce((s, p) => add(s, p), [0, 0, 0] as V3), 1 / MESH);
+    const dir = NODES.map((p, i) => norm(from[i] < 0 ? sub(centre, p) : sub(p, NODES[from[i]])));
+    // The route to the other end, for the packet riding the front.
+    const route = [k ? a : b];
+    while (from[route[0]] >= 0) route.unshift(from[route[0]]);
+    return { origin, at: dist.map((d) => (Number.isFinite(d) ? d / far : 2)), dir, route, far };
+  });
+})();
+
+/** A dot facing the camera (YOU's tilt), as a small filled hexagon. */
+const DOT = Array.from({ length: 7 }, (_, i) => rotX([Math.cos((TAU * i) / 6), Math.sin((TAU * i) / 6), 0], -0.36));
+
+/** When the front reaches a share `a` of the way, in the pulse's window. */
+const arrive = (a: number) => 0.08 + 0.5 * a;
+/** The twitch where the front arrives: forward first, a smaller recoil, gone within a moment. */
+const twitch = (s: number) => (s <= 0 ? 0 : Math.sin((TAU * s) / 0.07) * Math.exp(-s / 0.05));
 
 export const embedded: Scene = (t) => {
-  const yaw = 0.22 * Math.sin(TAU * t);
-  // The knock from inside: the set jolts just before the screen gives.
-  const knock = Math.sin(Math.PI * span(t, 0.27, 0.35));
-  const jolt: V3 = [0.018 * Math.sin(TAU * 34 * t) * knock, 0.012 * Math.sin(TAU * 26 * t) * knock, 0];
-  const place = (p: V3) => rotY(add(p, jolt), yaw);
-  const out: Stroke[] = TV.map((s) => ({ ...s, pts: s.pts.map(place) }));
+  const k = t < 0.5 ? 0 : 1;
+  const u = t * 2 - k;
+  const pulse = PULSES[k];
+  const yaw = TAU * t;
+  const front = (u - 0.08) / 0.5; // 0 … 1 while the pulse crosses
 
-  // Screen life: scanlines roll while it is whole, die when it breaks, return when it is fixed.
-  const on = 1 - easeInOut(span(t, 0.34, 0.37)) + easeInOut(span(t, 0.84, 0.93));
-  for (let k = 0; k < 5; k++) {
-    const phase = (k / 5 + t * 3) % 1;
-    const y = SCREEN.y - SCREEN.h / 2 + 0.08 + phase * (SCREEN.h - 0.16);
-    const x0 = SCREEN.x - SCREEN.w / 2 + 0.1, x1 = SCREEN.x + SCREEN.w / 2 - 0.1;
-    out.push({ pts: [[x0, y, glass(x0, y)], [x1, y, glass(x1, y)]].map((p) => place(p as V3)), weight: 0.5, ink: 0.45 * on * Math.sin(Math.PI * phase) });
-  }
+  const pos = NODES.map((p, i) => {
+    const idle: V3 = [0.025 * wave(t, 2, rand(i, 63)), 0.025 * wave(t, 3, rand(i, 64)), 0.025 * wave(t, 1, rand(i, 65))];
+    const kick = scale(pulse.dir[i], 0.06 * twitch(u - arrive(pulse.at[i])));
+    return rotY(add(add(p, idle), kick), yaw);
+  });
 
-  // Cracks: shoot out on impact, stay, then fade while the screen comes back.
-  const g = easeOut(span(t, 0.345, 0.385));
-  const crackInk = span(t, 0.344, 0.346) * (1 - easeInOut(span(t, 0.74, 0.86)));
-  for (const c of CRACKS) out.push({ pts: grow(c, g).map(place), weight: 0.8, ink: crackInk });
-  out.push({ pts: ring2([HIT[0], HIT[1], glass(HIT[0], HIT[1]) + 0.004], 0.05 * g, 9).map(place), weight: 0.8, ink: crackInk });
+  // Links swell a touch as the front passes through them.
+  const out: Stroke[] = LINKS.map(([a, b]) => {
+    const mid = (pulse.at[a] + pulse.at[b]) / 2;
+    return { pts: [pos[a], pos[b]], weight: 0.85 + 0.55 * Math.exp(-(((front - mid) / 0.06) ** 2)) };
+  });
 
-  // The Pico: out of the hole, towards you, tumbling; it fades as it gets too close.
-  const u = span(t, 0.345, 0.64);
-  const fly = easeOut(u);
-  const at: V3 = [lerp(HIT[0], 0.5, fly), HIT[1] + 0.5 * Math.sin(Math.PI * u) - 0.35 * fly * fly, lerp(FRONT_Z + 0.02, 1.15, fly)];
-  const turn = (p: V3) => rotAxis(rotX(p, -0.5), norm([0.4, 1, 0.25]), TAU * 1.15 * fly);
-  const picoInk = span(t, 0.345, 0.35) * (1 - span(u, 0.72, 1));
-  for (const s of PICO) out.push({ ...s, pts: s.pts.map((p) => place(add(turn(p), at))), ink: picoInk });
+  // One packet rides the front along the route to the far end.
+  const route = pulse.route.map((i) => pos[i]);
+  const along = (d: number): V3 => {
+    let left = Math.max(0, d) * pulse.far;
+    for (let i = 1; i < pulse.route.length; i++) {
+      const l = gap(pulse.route[i - 1], pulse.route[i]);
+      if (left <= l) return lerp3(route[i - 1], route[i], left / l);
+      left -= l;
+    }
+    return route[route.length - 1];
+  };
+  const f = clamp01(front);
+  const packet = f > 0 && f < 1 ? Math.min(1, (1 - f) / 0.1) : 0;
+  out.push({ pts: [along(f - 0.16), along(f - 0.08), along(f)], tone: 'accent', weight: 1.4, ink: packet });
 
-  // Shards of glass follow it out and drop away.
-  const v = span(t, 0.345, 0.6);
-  const shardInk = span(t, 0.345, 0.35) * (1 - v);
-  for (const sh of SHARDS) {
-    const c: V3 = add(add(HIT, [0, 0, FRONT_Z + 0.05]), [sh.dir[0] * 0.45 * v, sh.dir[1] * 0.35 * v - 0.6 * v * v, 0.75 * v]);
-    const tri = [0, 1, 2, 0].map((i) => rotAxis([sh.size * Math.cos((TAU * i) / 3), sh.size * Math.sin((TAU * i) / 3), 0], sh.spin, TAU * 1.5 * v));
-    out.push({ pts: tri.map((p) => place(add(c, p))), weight: 0.6, ink: shardInk });
-  }
+  // Devices: a dot each; the sender in the accent.
+  NODES.forEach((_, i) => {
+    const sender = i === pulse.origin;
+    out.push({ pts: DOT.map((d) => add(pos[i], scale(d, sender ? 0.036 : 0.026))), fill: sender ? 'accent' : 'ink', bare: true });
+  });
   return out;
 };
 

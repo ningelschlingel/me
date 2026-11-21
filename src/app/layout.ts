@@ -61,6 +61,13 @@ export class Viewport {
   readonly fine = matches(FINE_POINTER);
   /** The menu is open or hovered. Browsing tiles then step back and share the rest equally. */
   readonly navOpen = signal(false);
+  /** The menu was opened on purpose (tapped or clicked, not hovered). Whatever it covers may close it. */
+  readonly menu = signal(false);
+  /**
+   * The menu takes room from the deck: from the moment it opens until it has fully closed
+   * again (its flex-grow transition). Phones pin an open tile's content for exactly this long.
+   */
+  readonly navCovering = signal(false);
   /** Space a tile spends around its content (title column + padding), px. Reported by the tiles. */
   readonly frame = signal(0);
 

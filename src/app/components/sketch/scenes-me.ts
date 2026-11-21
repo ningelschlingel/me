@@ -1,4 +1,4 @@
-import { Scene, Stroke, TAU, V3, add, rotX, rotY, rotZ, scale, wave } from './math';
+import { Scene, Stroke, TAU, V3, rotX, rotY, rotZ, wave } from './math';
 import { Skin, box, face, lathe, pose, triangulate } from './solids';
 
 /*
@@ -10,7 +10,6 @@ import { Skin, box, face, lathe, pose, triangulate } from './solids';
  * frequencies only, every motion back where it started.
  */
 
-const PAPER: Skin = { tone: 'ink', lit: [0.07, 0.4] }; // light bodies (board, coin, ivory)
 const ACCENT: Skin = { tone: 'accent', lit: [0.72, 1] };
 
 /** A heartbeat: lub-dub, then rest. x ∈ [0, 1) is one beat. */
@@ -41,39 +40,6 @@ export const heart: Scene = (t) => {
     out.push(...box([c[0] - s, c[1] - s, c[2] - 0.09], [c[0] + s, c[1] + s, c[2] + 0.09], ACCENT));
   }
   return pose(out, (v) => rotY(v, yaw));
-};
-
-// ── 01 Logic · "Systems that stay clean": eight blocks, perfectly aligned, catching the light ─
-
-/** A four-point sparkle. */
-function star(c: V3, r: number, spin: number, ink: number): Stroke[] {
-  const ray = (a: number, len: number): V3 => add(c, rotZ([len, 0, 0], a + spin));
-  const arm = (a: number, len: number, weight: number): Stroke => ({ pts: [ray(a, len), ray(a + Math.PI, len)], tone: 'accent', weight, ink });
-  return [arm(0, r, 1.4), arm(Math.PI / 2, r, 1.4), arm(Math.PI / 4, r * 0.45, 0.9), arm((3 * Math.PI) / 4, r * 0.45, 0.9)];
-}
-
-export const logic: Scene = (t) => {
-  const gap = 0.235 + 0.035 * wave(t, 2); // the blocks breathe apart and close ranks again
-  const half = 0.19;
-  const turn = (p: V3) => rotX(rotY(p, TAU * t), 0.3 + 0.08 * wave(t, 2));
-  // A glint sweeps diagonally across, twice per loop; the block it touches lights up.
-  const SWEEP = 3.6;
-  const sweep = ((t * 2) % 1) * SWEEP - SWEEP / 2;
-  const out: Stroke[] = [];
-  for (const x of [-1, 1])
-    for (const y of [-1, 1])
-      for (const z of [-1, 1]) {
-        const c: V3 = [x * gap, y * gap, z * gap];
-        const hit = Math.exp(-((((x + y) / 2 - sweep) / 0.3) ** 2));
-        const cube = box([c[0] - half, c[1] - half, c[2] - half], [c[0] + half, c[1] + half, c[2] + half], hit > 0.5 ? ACCENT : PAPER);
-        out.push(...pose(cube, turn));
-        // Where the glint leaves an outer corner, a star pops.
-        const after = (sweep - (x + y) / 2 + SWEEP) % SWEEP;
-        const life = after < 0.5 ? Math.sin((Math.PI * after) / 0.5) : 0;
-        const corner = turn(scale([x, y, z], gap + half));
-        out.push(...star(add(corner, [0, 0, 0.06]), 0.14 * life, after * 3, life > 0.01 ? 1 : 0));
-      }
-  return out;
 };
 
 // ── 05 Analog · "Off screen": a chess knight, carved ────────────────────────────────────────

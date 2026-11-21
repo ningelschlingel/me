@@ -44,6 +44,7 @@
 .dot {
   width: 0.2em;
   height: 0.2em;
+  border-radius: 50%; /* the same round full stop as ME. YOU. INDEX. OURS. */
   background: var(--color-signal);
 }
 :host(.open) .dot { animation: hop 0.6s var(--ease-pop); }
@@ -66,19 +67,28 @@
 .swoosh path {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  transition: stroke-dashoffset 0.25s ease-in;
+  /* Undrawn, the round cap would still leave a dot: hidden once it has retracted. */
+  opacity: 0;
+  transition: stroke-dashoffset 0.25s ease-in, opacity 0s 0.25s;
 }
 :host(.open) .swoosh path {
   stroke-dashoffset: 0;
-  transition: stroke-dashoffset 0.5s 0.15s var(--ease-snap);
+  opacity: 1;
+  transition: stroke-dashoffset 0.5s 0.15s var(--ease-snap), opacity 0s 0.15s;
 }
 
 .arrow {
-  width: 1.75rem;
-  height: 1.75rem;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-right: -0.75rem; /* a finger-sized target; the glyph stays on the inset */
   cursor: pointer;
   transition: rotate 0.7s var(--ease-pop);
 }
+/* Control glyphs share one stroke (the tile's ×, the filter): 2px, cut square. */
+.arrow svg { width: 1.125rem; overflow: visible; }
+.arrow path { stroke-width: 2px; vector-effect: non-scaling-stroke; }
 :host(.open) .arrow { rotate: 180deg; }
 
 .links {

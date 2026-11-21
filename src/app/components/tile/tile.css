@@ -191,8 +191,9 @@
   }
   :host([data-state='active']) .progress { opacity: 1; transition: opacity 0.3s 0.3s; }
 
-  /* The way out: a drawn ×, no button around it. Invisible at rest (the row itself is the
-     target) unless it has keyboard focus. Pressing it turns it a quarter further. */
+  /* The way out: a drawn ×, no button around it, on the same 2px stroke as every control glyph.
+     Invisible at rest (the row itself is the target) unless it has keyboard focus. A tap
+     anywhere on an open tile closes it too (tile.ts). Pressing it turns it a quarter further. */
   .toggle {
     top: 0;
     right: calc(var(--pad) - 0.95rem);
@@ -201,8 +202,8 @@
     opacity: 0;
     transition: opacity 0.3s;
   }
-  .toggle svg { width: 0.875rem; overflow: visible; }
-  .toggle path { stroke-width: 1.5px; vector-effect: non-scaling-stroke; stroke-linecap: butt; }
+  .toggle svg { width: 1rem; overflow: visible; }
+  .toggle path { stroke-width: 2px; vector-effect: non-scaling-stroke; stroke-linecap: butt; }
   .toggle:focus-visible,
   :host([data-state='active']) .toggle { opacity: 1; transition: opacity 0.3s 0.2s; }
   :host([data-state='active']) .toggle:active svg { rotate: 135deg; transition-duration: 0.2s; }

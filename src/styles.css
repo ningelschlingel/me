@@ -72,7 +72,7 @@ body {
 
 /* Shared building blocks, so templates stay readable.
    Type scale, one weight per role:
-     tile title 900 (identity) · .page-title 800 · .lead 500 · .copy 400 · .label/.chip mono 500.
+     tile title 900 (identity) · .page-title 800 · .lead 500 · .statement/.copy 400 · .label/.chip mono 500.
    Black (900) inside a page is reserved for the one punchline. */
 @layer components {
   /* Every pager page has the same anatomy: label row on a rule, title, and a
@@ -120,12 +120,34 @@ body {
   .copy {
     @apply leading-relaxed font-normal opacity-75 lg:text-[1.0625rem];
   }
+  /* A page's only text under its title (ME chapters): a step up from .copy, larger and nearly
+     full ink, still regular weight so the title keeps the stage. */
+  .statement {
+    @apply max-w-[34rem] text-lg leading-normal font-normal tracking-[-0.005em] text-pretty opacity-90 lg:text-xl;
+  }
   .chip {
     @apply border border-current/35 px-2 py-1 text-[0.65rem] font-medium tracking-[0.1em] uppercase;
     font-family: var(--mono);
   }
   .chips {
     @apply flex flex-wrap gap-1.5;
+  }
+  /* A run of short items set apart by a round point (a drawn one: the typed · sits too low
+     beside capitals). Points are round, everywhere: the full stop, the page dots, the cursor. */
+  .dots {
+    @apply inline-flex flex-wrap items-center;
+    row-gap: 0.4rem;
+  }
+  .dots > * + *::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    margin-inline: 0.7em;
+    border-radius: 50%;
+    background: currentColor;
+    vertical-align: middle;
+    translate: 0 -1px;
   }
   .link {
     @apply text-sm font-bold tracking-tight underline decoration-2 underline-offset-4 hover:italic;

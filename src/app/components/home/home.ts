@@ -1,4 +1,4 @@
-import { Component, afterNextRender, computed, effect, inject, signal } from '@angular/core';
+import { Component, ElementRef, afterNextRender, computed, effect, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { CHAPTERS, LINKEDIN, MAIL, PROJECTS, Project, ROLES, RoleId, STRAVA, roleById } from '../../content';
 import { DECK_GROW, Viewport, tileGrow } from '../../layout';
@@ -10,6 +10,7 @@ import { Pico } from '../pico/pico';
 import { Pager } from '../pager/pager';
 import { Kick } from '../kick/kick';
 import { Marks } from '../marks/marks';
+import { Modules } from '../modules/modules';
 import { Sketch } from '../sketch/sketch';
 import { Tile, TileState } from '../tile/tile';
 
@@ -23,12 +24,12 @@ const INDEX = TILES.indexOf('index');
 
 @Component({
   selector: 'app-home',
-  imports: [Tile, Pager, Hero, Kick, Sketch, Inks, Pico, Charts, Marks, NgTemplateOutlet],
+  imports: [Tile, Pager, Hero, Kick, Sketch, Inks, Pico, Charts, Marks, Modules, NgTemplateOutlet],
   templateUrl: './home.html',
   styleUrl: './home.css',
   host: {
     '[style.flex-grow]': 'deckGrow',
-    '(document:keydown.escape)': 'close()',
+    '(document:keydown.escape)': 'escape()',
     '(window:popstate)': 'readHash()',
   },
 })
@@ -45,6 +46,14 @@ export class Home {
     const role = this.selected();
     return role ? PROJECTS.filter((p) => p.roles.includes(role)) : PROJECTS;
   });
+
+  /** Phones: the index's filter options are showing. */
+  readonly filterOpen = signal(false);
+  readonly filterLabel = computed(() => {
+    const role = this.selected();
+    return role ? roleById(role).label : 'All';
+  });
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
   readonly active = signal<number | null>(fromHash());
   private readonly hovered = signal<number | null>(null);
@@ -75,6 +84,24 @@ export class Home {
   });
 
   constructor() {
+    // While the filter's options are open, the first tap anywhere else only folds them away: it
+    // doesn't also close the tile or jump to a project.
+    effect((onCleanup) => {
+      if (!this.filterOpen()) return;
+      const outside = (e: Event) => {
+        if ((e.target as Element).closest?.('.picker')) return;
+        e.stopPropagation();
+        e.preventDefault();
+        this.filterOpen.set(false);
+      };
+      document.addEventListener('click', outside, true);
+      onCleanup(() => document.removeEventListener('click', outside, true));
+    });
+    // The options belong to the index: they fold away whenever it closes.
+    effect(() => {
+      if (this.active() !== INDEX) this.filterOpen.set(false);
+    });
+
     // The first frame is measured and corrected (tile frame, column widths) right after rendering.
     // Transitions stay off until that has settled, so the page appears in place instead of wobbling in.
     afterNextRender(() =>
@@ -128,6 +155,31 @@ export class Home {
 
   close() {
     this.active.set(null);
+  }
+
+  /** Escape folds away the filter options first, then closes the open tile. */
+  escape() {
+    if (this.filterOpen()) {
+      this.filterOpen.set(false);
+      this.focus('.picker-bar');
+    } else this.close();
+  }
+
+  toggleFilter() {
+    const open = !this.filterOpen();
+    this.filterOpen.set(open);
+    // Open: straight to the current choice, so the keyboard starts where the eye does.
+    if (open) setTimeout(() => this.focus('.picker-option.on'));
+  }
+
+  choose(role: RoleId | null) {
+    this.selected.set(role);
+    this.filterOpen.set(false);
+    this.focus('.picker-bar');
+  }
+
+  private focus(selector: string) {
+    this.host.querySelector<HTMLElement>(selector)?.focus({ preventScroll: true });
   }
 
   /** Back/forward (or an edited hash): the history entry decides what is open. */

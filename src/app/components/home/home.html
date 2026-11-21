@@ -36,6 +36,8 @@
           <app-pico />
         } @else if (c.visual === 'charts') {
           <app-charts />
+        } @else if (c.visual === 'modules') {
+          <app-modules />
         } @else {
           <app-sketch [kind]="c.visual" />
         }
@@ -43,10 +45,7 @@
         <h3 class="page-title">{{ c.title }}</h3>
         <div class="stage"></div>
         <div class="page-foot">
-          <p class="copy">{{ c.copy }}</p>
-          @if (c.role) {
-            <button type="button" class="btn" (click)="proof(c.role)">See the work</button>
-          }
+          <p class="statement">{{ c.copy }}</p>
         </div>
       </section>
     }
@@ -110,8 +109,25 @@
     @if (!desktop()) {
       <section class="page toc-page" data-num="00">
         <h3 class="page-title">The <br />receipts.</h3>
-        <div class="filters-inline" role="group" aria-label="Filter by role">
-          <ng-container *ngTemplateOutlet="filterButtons" />
+        <!-- The filter, folded into one bar: what is showing, and a way to change it. -->
+        <div class="picker" [class.open]="filterOpen()">
+          <button type="button" class="picker-bar" aria-controls="role-options" [attr.aria-expanded]="filterOpen()"
+            [attr.aria-label]="'Filter: ' + filterLabel() + ', ' + projects().length + ' projects'" (click)="toggleFilter()">
+            <span class="dots"><span>{{ filterLabel() }}</span><span class="picker-count">{{ projects().length }}</span></span>
+            <svg class="picker-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true">
+              <path class="funnel" d="M2 4h12M4.5 8h7M6.75 12h2.5" />
+              <path class="cross" d="M3 3l10 10M13 3L3 13" />
+            </svg>
+          </button>
+          <div id="role-options" class="picker-options" role="group" aria-label="Filter by role"
+            [attr.inert]="filterOpen() ? null : ''">
+            <button type="button" class="picker-option" [class.on]="!selected()" [attr.aria-pressed]="!selected()"
+              (click)="choose(null)">All</button>
+            @for (role of roles; track role.id) {
+              <button type="button" class="picker-option" [class.on]="selected() === role.id"
+                [attr.aria-pressed]="selected() === role.id" (click)="choose(role.id)">{{ role.label }}</button>
+            }
+          </div>
         </div>
         <ol class="toc">
           @for (p of projects(); track p.title; let i = $index) {
@@ -129,12 +145,14 @@
         <p class="page-label label"><span>{{ num(p) }}</span><span>{{ roleLabels(p) }}</span></p>
         <h3 class="page-title">{{ p.title }}</h3>
         <figure class="shot">
-          <img [src]="p.image" alt="" loading="lazy" (error)="$any($event.target).hidden = true" />
-          <!-- The slate: one stamped line, like the label on a contact sheet. Never wraps:
-               whatever doesn't fit on the line is left off. -->
-          <figcaption class="slate">
-            <span class="slate-roles">{{ roleLabels(p) }}</span>
-            @for (t of p.tags; track t) { <span class="slate-tag">{{ t }}</span> }
+          <div class="frame">
+            <img [src]="p.image" alt="" loading="lazy" (error)="$any($event.target).hidden = true" />
+          </div>
+          <!-- The tags: a quiet caption under the picture, like the line under a plate in a book.
+               Phones lead with the roles (desktop has them in the label row). -->
+          <figcaption class="tags">
+            <span class="tags-roles dots">@for (r of p.roles; track r) { <span>{{ roleLabel(r) }}</span> }</span>
+            <span class="dots">@for (t of p.tags; track t) { <span>{{ t }}</span> }</span>
           </figcaption>
         </figure>
         <div class="page-foot">

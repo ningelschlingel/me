@@ -129,10 +129,13 @@ export class Pager {
       });
     });
 
-    // A tile that closes forgets where it was.
+    // Desktop: a tile that closes forgets where it was. Phones keep the page: a tap anywhere
+    // closes a tile there, so one by accident must cost nothing; opening it again lands on the
+    // same page. (A new filter still starts over, see the MutationObserver.)
     const closed = () => ['rest', 'hidden'].includes(this.tile?.state() ?? '');
     effect(() => {
-      if (closed()) untracked(() => setTimeout(() => closed() && this.reset(), 700));
+      if (closed() && untracked(() => this.screen.desktop()))
+        untracked(() => setTimeout(() => closed() && this.reset(), 700));
     });
   }
 

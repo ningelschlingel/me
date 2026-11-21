@@ -2,6 +2,9 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CONTACTS } from '../../content';
 import { NAV_GROW, NAV_GROW_MOBILE, NAV_OPEN_GROW, Viewport } from '../../layout';
 
+/** The menu's open/close transition (nav.css) plus a frame. */
+const COVER_MS = 720;
+
 /**
  * Always-reachable contact rail: right column on desktop (opens on hover), bottom bar on phones.
  * Open, it takes exactly half the screen (see layout.ts).
@@ -20,7 +23,6 @@ import { NAV_GROW, NAV_GROW_MOBILE, NAV_OPEN_GROW, Viewport } from '../../layout
 export class Nav {
   readonly contacts = CONTACTS;
   readonly year = new Date().getFullYear();
-  readonly isOpen = signal(false);
   private readonly hovered = signal(false);
   readonly expanded = computed(() => this.isOpen() || this.hovered());
 
@@ -28,9 +30,19 @@ export class Nav {
   protected readonly growMobile = NAV_GROW_MOBILE;
   protected readonly openGrow = NAV_OPEN_GROW;
   protected readonly viewport = inject(Viewport);
+  readonly isOpen = this.viewport.menu;
+
+  private coverTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
-    effect(() => this.viewport.navOpen.set(this.expanded()));
+    effect(() => {
+      const open = this.expanded();
+      this.viewport.navOpen.set(open);
+      // Covering starts at once and ends only when the menu has slid back (nav.css, 0.7 s).
+      clearTimeout(this.coverTimer);
+      if (open) this.viewport.navCovering.set(true);
+      else this.coverTimer = setTimeout(() => this.viewport.navCovering.set(false), COVER_MS);
+    });
   }
 
   toggle() {

@@ -61,41 +61,37 @@ export const MAIL = contact('Mail');
 export const LINKEDIN = contact('LinkedIn');
 export const STRAVA = contact('Strava');
 
-/** The ME pages after the hello. A `role` links to its proof in INDEX. */
+/** The ME pages after the hello. */
 export interface Chapter {
   label: string;
   title: string;
   copy: string;
-  role?: RoleId;
   /** What lives on the page: a 3D line sketch (see sketch/registry.ts) or a flat 2D visual. */
   visual: Visual;
 }
 
 /** Flat 2D visuals, each its own component (see Home's template). */
-export type FlatKind = 'inks' | 'pico' | 'charts';
+export type FlatKind = 'inks' | 'pico' | 'charts' | 'modules';
 export type Visual = SketchKind | FlatKind;
 
 export const CHAPTERS: Chapter[] = [
   {
     label: 'Logic',
-    visual: 'logic',
+    visual: 'modules',
     title: 'Systems that stay clean.',
     copy: 'Scalable backends with Spring Boot, fluid UIs with Angular Signals, and a clean bridge in between: vertical feature slices, explicit use cases and setups that start with a single command.',
-    role: 'architect',
   },
   {
     label: 'Metal',
     visual: 'pico',
     title: 'Close to the hardware.',
     copy: 'I love the moment code leaves the screen and does something in the room: radar sensors on a Raspberry Pi, microcontrollers driving LEDs, clocks that tell time in words.',
-    role: 'embedded',
   },
   {
     label: 'Aesthetics',
     visual: 'inks',
     title: 'Visual intuition.',
     copy: 'I translate complex workflows into intentional UX. From a vector-perfect Illustrator asset to a Figma prototype, designed with technical constraints in mind and motion that feels physical.',
-    role: 'designer',
   },
   {
     label: 'Strategy',
