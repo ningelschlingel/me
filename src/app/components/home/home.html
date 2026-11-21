@@ -1,14 +1,14 @@
 <!-- ME. ─ hero, intro, and the people behind the roles -->
 <app-tile tileTitle="ME." tileSubtitle="Jan" style="--i: 0" class="bg-paper text-ink"
-  [state]="state(0)" [share]="share(0)" [grow]="grow(0)" [columns]="columns(0)" (activate)="open(0)" (dismiss)="close()" (step)="step(0, $event)" (hovered)="hover(0, $event)">
+  [state]="state(0)" [share]="share(0)" [grow]="grow(0)" (activate)="open(0)" (dismiss)="close()" (step)="step(0, $event)" (hovered)="hover(0, $event)">
   <app-pager>
-    <section>
+    <section data-num="00">
       <app-hero />
     </section>
 
-    <section class="page scene">
+    <section class="page scene" data-num="01">
       <app-sketch kind="heart" />
-      <p class="page-label label"><span>00</span><span>Hello</span></p>
+      <p class="page-label label"><span>01</span><span>Hello</span></p>
       <h3 class="page-title">Engineering <br /><span class="text-signal-deep">Emotion.</span></h3>
       <div class="stage"></div>
       <div class="page-foot">
@@ -20,7 +20,7 @@
           Some problems need an architect, some a tinkerer, some a designer. I become whichever one yours needs. The
           projects are the receipts.
         </p>
-        <dl class="grid w-full grid-cols-3 gap-4 border-t-2 border-current pt-4">
+        <dl class="grid w-full grid-cols-3 gap-4 border-t border-current/35 pt-4">
           <div><dt class="label">Role</dt><dd class="mt-1 font-bold">Fullstack</dd></div>
           <div><dt class="label">Based</dt><dd class="mt-1 font-bold">Frankfurt</dd></div>
           <div><dt class="label">Next</dt><dd class="mt-1 font-bold">MBA</dd></div>
@@ -29,7 +29,7 @@
     </section>
 
     @for (c of chapters; track c.label; let i = $index) {
-      <section class="page scene">
+      <section class="page scene" [attr.data-num]="pad(i + 2)">
         @if (c.visual === 'inks') {
           <app-inks />
         } @else if (c.visual === 'pico') {
@@ -39,12 +39,11 @@
         } @else {
           <app-sketch [kind]="c.visual" />
         }
-        <p class="page-label label"><span>0{{ i + 1 }}</span><span>{{ c.label }}</span></p>
+        <p class="page-label label"><span>{{ pad(i + 2) }}</span><span>{{ c.label }}</span></p>
         <h3 class="page-title">{{ c.title }}</h3>
         <div class="stage"></div>
         <div class="page-foot">
           <p class="copy">{{ c.copy }}</p>
-          <app-tags [tags]="c.tags" />
           @if (c.role) {
             <button type="button" class="btn" (click)="proof(c.role)">See the work</button>
           }
@@ -56,10 +55,10 @@
 
 <!-- YOU. ─ what the visitor needs; every role links to its proof -->
 <app-tile tileTitle="YOU." tileSubtitle="What do you need?" style="--i: 1; --icon-filter: invert(1)"
-  class="bg-cobalt text-white" [state]="state(1)" [share]="share(1)" [grow]="grow(1)" [columns]="columns(1)" (activate)="open(1)" (dismiss)="close()"
+  class="bg-cobalt text-white" [state]="state(1)" [share]="share(1)" [grow]="grow(1)" (activate)="open(1)" (dismiss)="close()"
   (step)="step(1, $event)" (hovered)="hover(1, $event)">
   <app-pager>
-    <section class="page">
+    <section class="page" data-num="00">
       <p class="page-label label"><span>00</span><span>You</span></p>
       <h3 class="page-title">We speak <br />the same <br />language.</h3>
       <!-- The preview's anchor: a question and its exclamation. -->
@@ -73,15 +72,14 @@
     </section>
 
     @for (role of roles; track role.id; let i = $index) {
-      <section class="page scene">
+      <section class="page scene" [attr.data-num]="pad(i + 1)">
         <app-sketch [kind]="role.id" />
-        <p class="page-label label"><span>0{{ i + 1 }}</span><span>{{ role.label }}</span></p>
+        <p class="page-label label"><span>{{ pad(i + 1) }}</span><span>{{ role.label }}</span></p>
         <h3 class="page-title">{{ role.question[0] }} <br />{{ role.question[1] }}</h3>
         <p class="answer-badge" [appKick]="role.answer">{{ role.answer }}</p>
         <div class="stage"></div>
         <div class="page-foot">
           <p class="copy">{{ role.pitch }}</p>
-          <app-tags [tags]="role.skills" />
           <button type="button" class="btn" (click)="proof(role.id)">
             See {{ projectsFor(role.id).length }} projects
           </button>
@@ -91,54 +89,88 @@
   </app-pager>
 </app-tile>
 
-<!-- INDEX. ─ selected work, filterable by role -->
+<!-- INDEX. ─ selected work, filterable by role. Numbers are fixed: filtering never renumbers. -->
 <app-tile tileTitle="INDEX." tileSubtitle="Selected work" style="--i: 2; --icon-filter: invert(1)"
-  class="bg-night text-paper" [state]="state(2)" [share]="share(2)" [grow]="grow(2)" [columns]="columns(2)" (activate)="open(2)" (dismiss)="close()"
+  class="bg-night text-paper" [state]="state(2)" [share]="share(2)" [grow]="grow(2)" (activate)="open(2)" (dismiss)="close()"
   (step)="step(2, $event)" (hovered)="hover(2, $event)">
+  <!-- Phones: an active filter takes the subtitle's place in the header line; a tap clears it. -->
+  @if (selected(); as role) {
+    <button tileChip type="button" class="chip-filter" (click)="selected.set(null)"
+      [attr.aria-label]="'Showing ' + roleLabel(role) + ' only. Show all projects'">
+      {{ roleLabel(role) }} <span aria-hidden="true">×</span>
+    </button>
+  }
+
   <div class="filters" role="group" aria-label="Filter by role">
-    <button type="button" class="filter" [class.on]="!selected()" (click)="selected.set(null)">All</button>
-    @for (role of roles; track role.id) {
-      <button type="button" class="filter" [class.on]="selected() === role.id" (click)="selected.set(role.id)">
-        {{ role.label }}
-      </button>
-    }
+    <ng-container *ngTemplateOutlet="filterButtons" />
   </div>
 
-  <app-pager class="cards" style="--page-w: 18rem">
-    @for (p of projects(); track p.title; let i = $index) {
-      <article class="card">
+  <app-pager #work>
+    <!-- Phones: the index opens on its own table of contents, the filter's home. -->
+    @if (!desktop()) {
+      <section class="page toc-page" data-num="00">
+        <h3 class="page-title">The <br />receipts.</h3>
+        <div class="filters-inline" role="group" aria-label="Filter by role">
+          <ng-container *ngTemplateOutlet="filterButtons" />
+        </div>
+        <ol class="toc">
+          @for (p of projects(); track p.title; let i = $index) {
+            <li>
+              <button type="button" (click)="work.go(i + 1, 0)">
+                <span class="toc-num">{{ num(p) }}</span><span class="toc-title">{{ p.title }}</span>
+              </button>
+            </li>
+          }
+        </ol>
+      </section>
+    }
+    @for (p of projects(); track p.title) {
+      <article class="page project" [attr.data-num]="num(p)">
+        <p class="page-label label"><span>{{ num(p) }}</span><span>{{ roleLabels(p) }}</span></p>
+        <h3 class="page-title">{{ p.title }}</h3>
         <figure class="shot">
           <img [src]="p.image" alt="" loading="lazy" (error)="$any($event.target).hidden = true" />
-          <span class="shot-num">{{ num(i) }}</span>
+          <!-- The slate: one stamped line, like the label on a contact sheet. Never wraps:
+               whatever doesn't fit on the line is left off. -->
+          <figcaption class="slate">
+            <span class="slate-roles">{{ roleLabels(p) }}</span>
+            @for (t of p.tags; track t) { <span class="slate-tag">{{ t }}</span> }
+          </figcaption>
         </figure>
-        <div class="card-body">
-          <p class="label">{{ roleLabels(p) }}</p>
-          <h3 class="card-title">{{ p.title }}</h3>
-          <p class="card-hook">{{ p.hook }}</p>
-          <p class="copy text-sm">{{ p.pitch }}</p>
-          <div class="chips">
-            @for (t of p.tags; track t) { <span class="chip">{{ t }}</span> }
-          </div>
-        </div>
-        <!-- The bottom bar is the card's button: full width, one target per link. -->
-        <div class="card-bar">
-          @for (l of p.links; track l.href) {
-            <a class="bar-link" [href]="l.href" target="_blank" rel="noopener" data-cursor="link">
-              {{ l.label }} <span aria-hidden="true">↗</span>
-            </a>
+        <div class="page-foot">
+          <p class="lead">{{ p.hook }}</p>
+          <p class="copy">{{ p.pitch }}</p>
+          @if (p.links.length || p.note) {
+            <div class="flex flex-wrap items-center gap-x-6 gap-y-4">
+              @for (l of p.links; track l.href; let first = $first) {
+                <a [class]="first ? 'btn' : 'link'" [href]="l.href" target="_blank" rel="noopener">
+                  {{ l.label }}@if (!first) { ↗ }
+                </a>
+              }
+              @if (p.note) { <p class="copy italic">{{ p.note }}</p> }
+            </div>
           }
-          @if (p.note) { <p class="bar-note">{{ p.note }}</p> }
         </div>
       </article>
     }
   </app-pager>
 </app-tile>
 
+<ng-template #filterButtons>
+  <button type="button" class="filter" [class.on]="!selected()" [attr.aria-pressed]="!selected()" (click)="selected.set(null)">All</button>
+  @for (role of roles; track role.id) {
+    <button type="button" class="filter" [class.on]="selected() === role.id" [attr.aria-pressed]="selected() === role.id"
+      (click)="selected.set(role.id)">
+      {{ role.label }}
+    </button>
+  }
+</ng-template>
+
 <!-- OURS. ─ working together. Contacts live in the menu; here only the two invitations. -->
 <app-tile tileTitle="OURS." tileSubtitle="Divide & conquer" style="--i: 3" class="bg-signal text-ink"
-  [state]="state(3)" [share]="share(3)" [grow]="grow(3)" [columns]="columns(3)" (activate)="open(3)" (dismiss)="close()" (step)="step(3, $event)" (hovered)="hover(3, $event)">
+  [state]="state(3)" [share]="share(3)" [grow]="grow(3)" (activate)="open(3)" (dismiss)="close()" (step)="step(3, $event)" (hovered)="hover(3, $event)">
   <app-pager>
-    <section class="page scene">
+    <section class="page scene" data-num="01">
       <app-sketch kind="train" />
       <p class="page-label label"><span>01</span><span>Work</span></p>
       <h3 class="page-title">Start <br />the <br />engine.</h3>
@@ -155,7 +187,7 @@
       </div>
     </section>
 
-    <section class="page scene">
+    <section class="page scene" data-num="02">
       <app-sketch kind="ride" />
       <p class="page-label label"><span>02</span><span>Ride</span></p>
       <h3 class="page-title">Let's <br />ride.</h3>

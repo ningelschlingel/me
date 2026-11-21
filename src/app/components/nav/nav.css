@@ -39,6 +39,8 @@
   line-height: 1;
   cursor: pointer;
 }
+/* Geologica's cursive forms (CRSV) for the name only: a friendlier hand than the titles. */
+.name { font-variation-settings: 'SHRP' var(--sharp), 'CRSV' 1; }
 .dot {
   width: 0.2em;
   height: 0.2em;

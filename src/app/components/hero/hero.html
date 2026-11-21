@@ -1,20 +1,13 @@
 <div class="grid">
   <figure #polaroid class="polaroid">
-    <app-morph [persona]="persona()" (crack)="shake()" />
+    <app-morph [persona]="persona()" (crack)="crack()" />
     <img class="caption" src="i-am-jan.svg" alt="I am Jan" />
   </figure>
 
-  <div class="pitch" aria-live="polite">
-    <app-flap class="question" [text]="line().question.join(' ')" />
-    <p class="answer" [appKick]="line().answer">{{ line().answer }}</p>
-  </div>
-
-  <div class="roles" role="group" aria-label="What do you need?">
-    @for (role of roles; track role.id) {
-      <button type="button" class="role" [class.on]="selected() === role.id"
-        [attr.aria-pressed]="selected() === role.id" (click)="pick(role.id)">
-        {{ role.label }}
-      </button>
-    }
+  <!-- Three beats: the claim, the visitor's question (YOU's own words), the punchline. -->
+  <div class="pitch">
+    <p class="claim">I build stuff.</p>
+    <p class="ask">What do you need?</p>
+    <p class="answer">I <span #adapt class="adapt">adapt.</span></p>
   </div>
 </div>

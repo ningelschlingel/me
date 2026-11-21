@@ -1,32 +1,23 @@
 <div #viewport class="pager-viewport" tabindex="0" aria-roledescription="carousel" [class.dragging]="dragging()"
   (pointerdown)="onPointerDown($event)" (pointermove)="onPointerMove($event)" (pointerup)="onPointerUp($event)"
-  (pointercancel)="onPointerUp($event)" (wheel)="onWheel($event)" (keydown)="onKey($event)"
+  (pointercancel)="onPointerUp($event)" (pointerleave)="lean(0)" (click)="onClick($event)" (wheel)="onWheel($event)" (keydown)="onKey($event)"
+  [attr.data-prev]="index() > 0 ? '' : null" [attr.data-next]="index() < stops().length - 1 ? '' : null"
   (scroll)="onNativeScroll()" (focusin)="onFocusIn($event)" (dragstart)="$event.preventDefault()">
   <div #track class="pager-track">
     <ng-content />
   </div>
-  /* FIXME: hints turned off due to visual bugs */
-  <!-- <div class="pager-hint" [class.on]="hinting()" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
-      <path d="M9 5l7 7-7 7" />
-    </svg>
-  </div> -->
 </div>
 
 @if (stops().length > 1) {
-  <!-- Mouse: arrows at both ends, dots between. Touch: just the dots (you swipe). -->
+  <!-- Just the dots (desktop; phones show the page in the tile's header line instead). Mouse: the
+       open tile's edges turn the page (the cursor shows it), and so do drags, the wheel and the
+       arrow keys. Touch: you swipe. -->
   <nav class="pager-nav" aria-label="Pages">
-    <button type="button" class="pager-btn" aria-label="Previous page" [disabled]="index() === 0" (click)="go(index() - 1, 0)">
-      <img src="arrow.svg" alt="" class="-scale-x-100" />
-    </button>
     <div class="pager-dots">
       @for (stop of stops(); track $index) {
         <button type="button" [class.on]="$index === index()" [attr.aria-label]="'Page ' + ($index + 1)"
           [attr.aria-current]="$index === index()" (click)="go($index, 0)"></button>
       }
     </div>
-    <button type="button" class="pager-btn" aria-label="Next page" [disabled]="index() === stops().length - 1" (click)="go(index() + 1, 0)">
-      <img src="arrow.svg" alt="" />
-    </button>
   </nav>
 }

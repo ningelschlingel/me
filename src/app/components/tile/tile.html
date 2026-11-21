@@ -3,6 +3,21 @@
   @if (tileSubtitle()) {
     <p class="sub">{{ tileSubtitle() }}</p>
   }
+
+  <!-- Phones, open: the title has folded back and this one line takes its place: the page's
+       number on a turning drum, the subtitle (or whatever the tile puts there), and the way out. -->
+  <div class="line">
+    @if (nums().length > 1) {
+      <span class="dial" aria-hidden="true">
+        @for (n of nums(); track $index) {
+          <span class="face" [style.--k]="$index">{{ n }}</span>
+        }
+      </span>
+    }
+    <span class="line-sub">{{ tileSubtitle() }}</span>
+    <span class="slot"><ng-content select="[tileChip]" /></span>
+  </div>
+
   <button type="button" class="toggle" (click)="toggle()"
     [attr.aria-expanded]="state() === 'active'"
     [attr.aria-label]="(state() === 'active' ? 'Close ' : 'Open ') + tileTitle()">
@@ -10,6 +25,9 @@
       <path d="M4 12h16M12 4v16" />
     </svg>
   </button>
+
+  <!-- Phones, open: where you are among the pages, moving with your finger. -->
+  <span class="progress" aria-hidden="true"></span>
 </header>
 
 <div class="body" [attr.inert]="open() ? null : ''">

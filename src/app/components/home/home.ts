@@ -1,6 +1,7 @@
-import { Component, afterNextRender, afterRenderEffect, computed, effect, inject, signal } from '@angular/core';
+import { Component, afterNextRender, computed, effect, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { CHAPTERS, LINKEDIN, MAIL, PROJECTS, Project, ROLES, RoleId, STRAVA, roleById } from '../../content';
-import { CARDS, Columns, DECK_GROW, Viewport, WIDE, tileGrow } from '../../layout';
+import { DECK_GROW, Viewport, tileGrow } from '../../layout';
 import { RoleState } from '../../role-state';
 import { Hero } from '../hero/hero';
 import { Charts } from '../charts/charts';
@@ -10,7 +11,6 @@ import { Pager } from '../pager/pager';
 import { Kick } from '../kick/kick';
 import { Marks } from '../marks/marks';
 import { Sketch } from '../sketch/sketch';
-import { Tags } from '../tags/tags';
 import { Tile, TileState } from '../tile/tile';
 
 /** Tile order; the id doubles as the URL hash for deep links (/#index). */
@@ -20,18 +20,16 @@ const FEATURED = 0;
 const HOVER_IN_MS = 90;
 const HOVER_OUT_MS = 220;
 const INDEX = TILES.indexOf('index');
-/** Reading pages get wide columns, the project index gets cards. */
-const COLUMNS: Columns[] = TILES.map((id) => (id === 'index' ? CARDS : WIDE));
 
 @Component({
   selector: 'app-home',
-  imports: [Tile, Pager, Hero, Kick, Sketch, Inks, Pico, Charts, Marks, Tags],
+  imports: [Tile, Pager, Hero, Kick, Sketch, Inks, Pico, Charts, Marks, NgTemplateOutlet],
   templateUrl: './home.html',
   styleUrl: './home.css',
   host: {
     '[style.flex-grow]': 'deckGrow',
     '(document:keydown.escape)': 'close()',
-    '(window:hashchange)': 'readHash()',
+    '(window:popstate)': 'readHash()',
   },
 })
 export class Home {
@@ -51,7 +49,10 @@ export class Home {
   readonly active = signal<number | null>(fromHash());
   private readonly hovered = signal<number | null>(null);
   private readonly viewport = inject(Viewport);
+  readonly desktop = this.viewport.desktop;
   private hoverTimer?: ReturnType<typeof setTimeout>;
+  /** The next change of `active` comes from history itself: don't write it back. */
+  private popping = false;
 
   readonly states = computed<TileState[]>(() => {
     const active = this.active();
@@ -61,9 +62,9 @@ export class Home {
     const peek = this.hovered() ?? FEATURED;
     return TILES.map((_, i) => (peek === i ? 'peek' : 'rest'));
   });
-  /** Every tile previews at the same width (one reading column), whatever its open view holds. */
+  /** Every tile previews at the same width: one column of its open view. */
   readonly grows = computed(() => {
-    const open = this.viewport.openGrow(TILES.length, WIDE);
+    const open = this.viewport.openGrow(TILES.length);
     return this.states().map((s) => tileGrow(s, open));
   });
   /** Each tile's final part of the deck, so its pages can be laid out before it gets there. */
@@ -82,10 +83,24 @@ export class Home {
       ),
     );
 
+    // The address follows the open tile. Opening one is a step in history, so the back button
+    // (Android's, iOS's edge swipe) closes it instead of leaving the site; moving between open
+    // tiles replaces that step, and closing one with the header takes the step back.
+    let shown = this.active();
     effect(() => {
       const i = this.active();
-      const url = i === null ? location.pathname + location.search : `#${TILES[i]}`;
-      history.replaceState(history.state, '', url);
+      const prev = shown;
+      shown = i;
+      if (this.popping) return void (this.popping = false);
+      const base = location.pathname + location.search;
+      if (i === null) {
+        if (history.state?.tile) history.back();
+        else history.replaceState(null, '', base);
+      } else if (prev === null && i !== null) {
+        history.pushState({ tile: true }, '', `#${TILES[i]}`);
+      } else {
+        history.replaceState(history.state, '', `#${TILES[i]}`);
+      }
     });
   }
 
@@ -99,10 +114,6 @@ export class Home {
 
   grow(i: number) {
     return this.grows()[i];
-  }
-
-  columns(i: number) {
-    return COLUMNS[i];
   }
 
   open(i: number) {
@@ -119,8 +130,12 @@ export class Home {
     this.active.set(null);
   }
 
+  /** Back/forward (or an edited hash): the history entry decides what is open. */
   readHash() {
-    this.active.set(fromHash());
+    const next = fromHash();
+    if (next === this.active()) return;
+    this.popping = true;
+    this.active.set(next);
   }
 
   hover(i: number, on: boolean) {
@@ -142,12 +157,21 @@ export class Home {
     return PROJECTS.filter((p) => p.roles.includes(role));
   }
 
-  num(i: number) {
-    return String(i + 1).padStart(2, '0');
+  /** A project's number is its place in the whole index: filtering never renumbers. */
+  num(project: Project) {
+    return String(PROJECTS.indexOf(project) + 1).padStart(2, '0');
   }
 
   roleLabels(project: Project) {
     return project.roles.map((r) => roleById(r).label).join(' · ');
+  }
+
+  roleLabel(role: RoleId) {
+    return roleById(role).label;
+  }
+
+  pad(n: number) {
+    return String(n).padStart(2, '0');
   }
 
 }

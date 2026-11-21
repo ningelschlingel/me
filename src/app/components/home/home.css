@@ -49,7 +49,8 @@
   text-transform: uppercase;
 }
 
-/* Filters: a desktop tool. Phones get the whole screen for the cards. */
+/* Filters. Desktop: a bar above the pages. Phones: on the index's contents page (.filters-inline),
+   and an active one stands in the tile's header line (.chip-filter). */
 .filters {
   display: none;
 }
@@ -61,75 +62,76 @@
     margin-bottom: 1.25rem;
   }
 }
+.filters-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.filters-inline .filter { padding: 0.7rem 0.8rem; } /* a finger-sized target */
 
-/* A project: the image is the anchor, the text below, the bottom bar is the button. */
-.card {
+/* The filter in the header line: a solid block in the accent (the slates' role colour), so it
+   reads as a state, not a label. A tap clears it. */
+.chip-filter {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-night-2);
-  transition: translate 0.45s var(--ease-pop), box-shadow 0.45s var(--ease-snap);
+  padding: 0.3rem 0.45rem;
+  background: var(--color-signal);
+  color: var(--color-ink);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
 }
-/* Hovering the button revives the card: it lifts towards you. */
-.card:has(.bar-link:hover) {
-  translate: 0 -0.4rem;
-  box-shadow: 0 1.4rem 2.2rem -1.2rem rgb(0 0 0 / 0.65);
+/* The visible chip is small; the target is not. */
+.chip-filter::after {
+  content: '';
+  position: absolute;
+  inset: -0.6rem -0.4rem;
 }
-.card:has(.bar-link:hover) .shot img { scale: 1.04; }
 
-.card-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 0.6rem;
-  min-height: 0;
-  padding: 1rem 1rem 1.1rem;
+/* Phones: the index's own table of contents. Fixed numbers, hairlines, one tap to the project. */
+.toc {
+  border-top: 1px solid color-mix(in srgb, currentColor 35%, transparent);
 }
-.card-title {
-  font-size: 1.3rem;
-  font-weight: 800;
-  line-height: 0.95;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-}
-.card-hook { font-weight: 500; font-size: 0.95rem; line-height: 1.3; }
-
-.card-bar {
+.toc button {
   display: flex;
-  border-top: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-}
-.bar-link {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: space-between;
+  align-items: baseline;
   gap: 1rem;
-  padding: 0.85rem 1rem;
-  font-size: 0.85rem;
-  font-weight: 700;
-  transition: background 0.2s;
+  width: 100%;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  text-align: left;
+  cursor: pointer;
 }
-.bar-link + .bar-link { border-left: 1px solid color-mix(in srgb, currentColor 25%, transparent); }
-.bar-link:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
-.bar-link span { transition: translate 0.3s var(--ease-pop); }
-.bar-link:hover span { translate: 0.15rem -0.15rem; }
-.bar-note { padding: 0.85rem 1rem; font-size: 0.85rem; font-style: italic; opacity: 0.75; }
+.toc-num {
+  flex: none;
+  font: 500 0.7rem/1 var(--mono);
+  letter-spacing: 0.1em;
+  opacity: 0.65;
+}
+.toc-title {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.toc button:active .toc-title { font-style: italic; }
 
-@media (width >= 64rem) {
-  .card-body { gap: 0.75rem; padding: 1.25rem 1.5rem 1.4rem; }
-  .card-title { font-size: 1.5rem; }
-  .card-hook { font-size: 1rem; }
-  .bar-link, .bar-note { padding: 1rem 1.5rem; }
+/* A project: a page like every other (rule, label row, title, foot). The image takes the
+   place a sketch has elsewhere; spacing alone groups the rest, no card around it. */
+.project .page-title {
+  /* Project names run longer than page titles ("Microcontrollers"): a step smaller. */
+  font-size: clamp(1.5rem, min(8.5cqi, 5dvh), 3rem);
 }
 
 /* Title image. Until a real one exists (or if it fails), a hatched placeholder shows through.
-   Always the card's full width; on short screens it gets shorter, never narrower. */
+   Always the page's full width. It is the one thing on the page that gives way: when text and
+   links need the room (short screens, long pitches) it gets shorter, never narrower. */
 .shot {
   position: relative;
-  flex-shrink: 0;
+  flex: 0 1 auto;
   width: 100%;
   aspect-ratio: 16 / 10;
-  max-height: 24dvh;
+  min-height: 5rem;
+  max-height: 30dvh;
   overflow: hidden;
   background:
     repeating-linear-gradient(-45deg, transparent 0 11px, rgb(255 255 255 / 0.06) 11px 12px),
@@ -146,13 +148,36 @@
   object-fit: cover;
   transition: scale 0.8s var(--ease-snap);
 }
-.shot-num {
+/* The slate: a solid ink strip on the image's lower edge with one stamped mono line. No blur,
+   no shadow: it reads as a label on a contact sheet. The line never wraps; tags that would
+   start a second line are cut off by the strip's height. */
+.slate {
   position: absolute;
-  top: 0;
-  left: 0;
-  padding: 0.4rem 0.6rem;
-  background: var(--color-paper);
-  color: var(--color-night);
-  font: 500 0.7rem/1 var(--mono);
-  letter-spacing: 0.1em;
+  inset: auto 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.6rem;
+  height: 1.5rem;
+  padding: 0 0.6rem;
+  overflow: hidden;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font: 500 0.625rem/1.5rem var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
+.slate-roles { color: var(--color-signal); }
+.slate-tag + .slate-tag::before {
+  content: '/';
+  margin-right: 0.6rem;
+  opacity: 0.5;
+}
+/* Desktop shows the roles in the label row already. */
+@media (width >= 64rem) {
+  .slate-roles { display: none; }
+}
+
+/* Pointing at a project's link brings its image a little closer. */
+.project:has(.btn:hover, .link:hover) .shot img { scale: 1.04; }

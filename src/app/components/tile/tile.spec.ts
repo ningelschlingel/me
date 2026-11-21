@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Viewport } from '../../layout';
 import { Tile } from './tile';
 
 describe('Tile', () => {
@@ -22,7 +23,8 @@ describe('Tile', () => {
     expect(activated).toBe(2);
   });
 
-  it('closes again from the toggle, the title bar or any open spot, not from controls', async () => {
+  it('desktop: closes again from the toggle, the title bar or any open spot, not from controls', async () => {
+    TestBed.inject(Viewport).desktop.set(true);
     fixture.componentRef.setInput('state', 'active');
     await fixture.whenStable();
     let dismissed = 0;
@@ -36,6 +38,20 @@ describe('Tile', () => {
     host.querySelector('.body')!.append(button);
     button.click();
     expect(dismissed).toBe(3); // controls do their own thing
+  });
+
+  it('phones: closes from the header line only; a tap on a page is not a way out', async () => {
+    TestBed.inject(Viewport).desktop.set(false);
+    fixture.componentRef.setInput('state', 'active');
+    await fixture.whenStable();
+    let dismissed = 0;
+    fixture.componentInstance.dismiss.subscribe(() => dismissed++);
+    const host = fixture.nativeElement as HTMLElement;
+    host.querySelector<HTMLElement>('.body')!.click();
+    expect(dismissed).toBe(0);
+    host.querySelector<HTMLElement>('.line')!.click();
+    host.querySelector<HTMLElement>('.toggle')!.click();
+    expect(dismissed).toBe(2);
   });
 
   it('keeps hidden content inert', async () => {

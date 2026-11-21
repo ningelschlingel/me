@@ -25,6 +25,8 @@
               }
             ],
             "styles": [
+              "node_modules/@fontsource-variable/geologica/full.css",
+              "node_modules/@fontsource-variable/jetbrains-mono/wght.css",
               "src/styles.css"
             ]
           },
@@ -38,7 +40,7 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
+                  "maximumWarning": "6kB",
                   "maximumError": "8kB"
                 }
               ],

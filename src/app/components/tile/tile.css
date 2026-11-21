@@ -37,7 +37,12 @@
   font-weight: 900;
   letter-spacing: -0.05em;
   white-space: nowrap;
+  /* At rest the titles are soft; the one you look into is cut sharp (Geologica's SHRP axis). */
+  --sharp: 0;
+  transition: font-variation-settings 0.6s var(--ease-snap);
 }
+:host([data-state='peek']) .title,
+:host([data-state='active']) .title { --sharp: 100; }
 
 .sub {
   font: 500 0.7rem/1 var(--mono);
@@ -50,24 +55,158 @@
 :host([data-state='peek']) .sub,
 :host([data-state='active']) .sub { opacity: 0.6; }
 
-/* Phones: a clear, always visible button. Desktop: see below. */
+/* The toggle. Phones: see "Phones, open" below. Desktop: see the media query at the end. */
 .toggle {
   position: absolute;
   z-index: 2; /* pages create their own layers (mask, scroll); stay above them */
-  top: calc(var(--pad-y) - 0.35rem);
-  right: var(--pad);
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 2px solid currentColor;
   cursor: pointer;
 }
 .toggle svg {
-  width: 1.1rem;
   transition: rotate 0.5s var(--ease-pop);
 }
 :host([data-state='active']) .toggle svg { rotate: 45deg; }
+
+/* The open header's parts. Phones only (below); desktop has its vertical title instead. */
+.line,
+.progress { display: none; }
+
+/* ── Phones ──────────────────────────────────────────────────────────────────────────────
+   At rest a row is its big title and nothing else: no button, the whole band is the target.
+   Open, the title folds back like a flap falling over and one mono line takes its place:
+   the page number on a turning drum, the subtitle, a hairline ×. The 2px rule under it is the
+   only rule on the page, and it shows where you are among the pages. */
+@media (width < 64rem) {
+  :host { --line: 2.75rem; }
+
+  .head {
+    position: relative;
+    display: block;
+    height: calc(var(--title) * 0.85 + 2 * var(--pad-y));
+    padding: 0;
+    perspective: 40rem;
+    perspective-origin: var(--pad) 100%;
+    transition: height 0.5s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  :host([data-state='active']) .head { height: var(--line); }
+
+  .title {
+    position: absolute;
+    left: var(--pad);
+    top: var(--pad-y);
+    transform-origin: 0 100%;
+    /* Closing: it swings back up and settles with a small overshoot. */
+    transition:
+      transform 0.52s 0.12s cubic-bezier(0.34, 1.4, 0.5, 1),
+      opacity 0.2s 0.12s,
+      font-variation-settings 0.6s var(--ease-snap);
+  }
+  /* Opening: it falls backwards under gravity (ease-in), cut sharp as it goes, gone by the end. */
+  :host([data-state='active']) .title {
+    transform: rotateX(90deg);
+    opacity: 0;
+    transition:
+      transform 0.38s cubic-bezier(0.55, 0, 0.75, 0.2),
+      opacity 0.14s 0.24s linear,
+      font-variation-settings 0.3s;
+  }
+  .sub { display: none; }
+
+  .line {
+    position: absolute;
+    inset: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    height: var(--line);
+    padding: 0 calc(var(--pad) + 2rem) 0 calc(var(--pad) - 0.45ch); /* the dial's first digit on the inset */
+    font: 500 0.7rem/1 var(--mono);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    translate: 0 0.6rem;
+    transition: opacity 0.2s, translate 0.3s, visibility 0s 0.2s;
+  }
+  /* It rises into the line once the title has started to fall, overshooting a hair. */
+  :host([data-state='active']) .line {
+    opacity: 1;
+    visibility: visible;
+    translate: none;
+    transition: opacity 0.3s 0.16s, translate 0.36s 0.16s cubic-bezier(0.2, 0.9, 0.25, 1.15), visibility 0s;
+  }
+  .line-sub { overflow: hidden; text-overflow: ellipsis; opacity: 0.8; }
+  /* Something in the slot (INDEX: the active filter) takes the subtitle's place. */
+  .line:has(.slot > *) .line-sub { display: none; }
+  .slot { display: contents; }
+
+  /* The dial: one face per page around a small drum turning on a vertical axis. It turns with
+     the pager (--progress, live while you drag), so the number rolls the way you swipe. A face
+     fades out within one step of the front: at rest only the current number shows. */
+  .dial {
+    position: relative;
+    flex: none;
+    width: 3.5ch;
+    height: 1em;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+    perspective: 12rem;
+    mask-image: linear-gradient(90deg, transparent, #000 22% 78%, transparent);
+  }
+  .face {
+    --d: calc(var(--k) - var(--progress, 0));
+    position: absolute;
+    inset: 0;
+    text-align: center;
+    backface-visibility: hidden;
+    /* 60° apart on a 1.5rem drum: neighbours sit a full number apart, never on top of each other. */
+    transform: translateZ(-1.5rem) rotateY(calc(var(--d) * 60deg)) translateZ(1.5rem);
+    opacity: calc(1 - min(1, 1.5 * max(var(--d), -1 * var(--d))));
+  }
+
+  /* The rule: a hairline across, and on it a 2px segment, one page wide, at the current page. */
+  .progress {
+    position: absolute;
+    inset: auto 0 0;
+    display: block;
+    height: 2px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .progress::before,
+  .progress::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    background: currentColor;
+  }
+  .progress::before { right: 0; height: 1px; opacity: 0.3; }
+  .progress::after {
+    width: calc(100% / var(--pages, 1));
+    height: 2px;
+    translate: calc(var(--progress, 0) * 100%) 0;
+  }
+  :host([data-state='active']) .progress { opacity: 1; transition: opacity 0.3s 0.3s; }
+
+  /* The way out: a drawn ×, no button around it. Invisible at rest (the row itself is the
+     target) unless it has keyboard focus. Pressing it turns it a quarter further. */
+  .toggle {
+    top: 0;
+    right: calc(var(--pad) - 0.95rem);
+    width: var(--line);
+    height: var(--line);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .toggle svg { width: 0.875rem; overflow: visible; }
+  .toggle path { stroke-width: 1.5px; vector-effect: non-scaling-stroke; stroke-linecap: butt; }
+  .toggle:focus-visible,
+  :host([data-state='active']) .toggle { opacity: 1; transition: opacity 0.3s 0.2s; }
+  :host([data-state='active']) .toggle:active svg { rotate: 135deg; transition-duration: 0.2s; }
+}
 
 .body {
   display: flex;
@@ -75,12 +214,18 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  padding: 0 0 0.5rem; /* phones: pages bring their own inset, dots sit close to the menu */
+  padding: 0 0 1.25rem; /* phones: pages bring their own inset; the foot keeps clear of the menu */
   opacity: 0;
   visibility: hidden;
   translate: 0 2rem;
   transition: opacity 0.3s, translate 0.5s var(--ease-snap), visibility 0s 0.3s;
 }
+/* Phones, menu open over this tile: the content keeps its height and the menu covers it. */
+:host([data-pinned]) .body {
+  flex: none;
+  height: var(--body-h);
+}
+
 /* Content arrives once the tile has made most of its room: no fighting over space. */
 :host([data-state='peek']) .body,
 :host([data-state='active']) .body {
@@ -106,18 +251,21 @@
     writing-mode: vertical-lr;
   }
 
-  /* The cursor badge does the talking; the button stays for keyboards and as an anchor when open. */
+  /* The cursor badge does the talking; the button stays for keyboards, and for touch screens
+     this wide (no cursor badge there) as the way out of an open tile. */
   .toggle {
-    top: auto;
-    right: auto;
     bottom: var(--pad);
     left: 2rem;
-    border: 0;
+    width: 2.5rem;
+    height: 2.5rem;
     opacity: 0;
     transition: opacity 0.3s;
   }
-  .toggle:focus-visible,
-  :host([data-state='active']) .toggle { opacity: 1; }
+  .toggle svg { width: 1.1rem; }
+  .toggle:focus-visible { opacity: 1; }
+  @media (hover: none), (pointer: coarse) {
+    :host([data-state='active']) .toggle { opacity: 1; }
+  }
 
   .body { padding: var(--pad) var(--pad) var(--pad) 0; translate: 3rem 0; }
 }
@@ -127,4 +275,6 @@
 /* Reduced motion: the tile still glides (it explains where you went), content just fades. */
 @media (prefers-reduced-motion: reduce) {
   .body { translate: none !important; }
+  /* Phones: the title doesn't fall, the line doesn't rise: one crossfade. */
+  .title, .line { transform: none !important; translate: none !important; }
 }

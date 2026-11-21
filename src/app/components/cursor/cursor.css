@@ -1,3 +1,4 @@
+/* A flat round badge in the tile's own ink, a little see-through; the glyph in its paper. */
 :host {
   position: fixed;
   top: 0;
@@ -7,21 +8,41 @@
   place-items: center;
   width: 2.75rem;
   height: 2.75rem;
-  background: var(--fg, #000);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fg, #000) 80%, transparent);
   color: var(--bg, #fff);
   pointer-events: none;
   opacity: 0;
   scale: 0.4;
-  transition: opacity 0.25s, scale 0.35s var(--ease-pop), background 0.3s, color 0.3s;
+  transition:
+    opacity 0.25s,
+    scale 0.35s var(--ease-pop),
+    width 0.4s var(--ease-snap),
+    background-color 0.3s,
+    color 0.3s;
 }
 :host(.on) { opacity: 1; scale: 1; }
 :host(.on.down) { scale: 0.82; }
+/* Turning a page: the bead stretches into a pill, like the current page's dot. */
+:host(.turn) { width: 3.75rem; }
 
 svg {
   width: 1.1rem;
-  transition: rotate 0.45s var(--ease-pop);
+  overflow: visible;
 }
-:host(.close) svg { rotate: 45deg; }
+svg path {
+  transform-origin: 12px 12px;
+  transition: rotate 0.45s var(--ease-pop), scale 0.3s var(--ease-pop), opacity 0.2s;
+}
+/* One glyph at a time; the others wait shrunk and invisible, ready to morph in. */
+.turn,
+.out { opacity: 0; scale: 0.3; }
+:host(.close) .cross { rotate: 45deg; }
+:host(.turn) .cross,
+:host(.link) .cross { opacity: 0; scale: 0.3; rotate: 90deg; }
+:host(.turn) .turn { opacity: 1; scale: 1; }
+:host(.back) .turn { rotate: 180deg; }
+:host(.link) .out { opacity: 1; scale: 1; }
 
 @media (width < 64rem), (hover: none) {
   :host { display: none; }

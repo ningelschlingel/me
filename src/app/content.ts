@@ -17,7 +17,6 @@ export interface Role {
   /** My answer. Each role gets its own, honest one. */
   answer: string;
   pitch: string;
-  skills: string[];
 }
 
 export const ROLES: Role[] = [
@@ -28,7 +27,6 @@ export const ROLES: Role[] = [
     answer: 'I can do that.',
     pitch:
       'Systems that stay clean while they grow. Clear boundaries, boring deployments and decisions that are written down instead of remembered.',
-    skills: ['Spring Boot', 'Clean Architecture', 'Docker', 'Keycloak', 'PostgreSQL'],
   },
   {
     id: 'embedded',
@@ -37,7 +35,6 @@ export const ROLES: Role[] = [
     answer: "I've done that.",
     pitch:
       'Code that leaves the screen. Sensors, Raspberry Pis and microcontrollers, plus the kind of performance work where every millisecond is a feature.',
-    skills: ['Python', 'C++', 'Raspberry Pi', 'Microcontrollers', 'Performance'],
   },
   {
     id: 'designer',
@@ -46,15 +43,8 @@ export const ROLES: Role[] = [
     answer: 'I like doing that.',
     pitch:
       'Interfaces that actually feel like something. From Figma and Illustrator to motion that is engineered, not guessed.',
-    skills: ['UI / UX', 'Figma', 'Illustrator', 'Motion', 'Print'],
   },
 ];
-
-/** What the hero asks before anyone picks a role. */
-export const INTRO: Pick<Role, 'question' | 'answer'> = {
-  question: ['What do you', 'need?'],
-  answer: 'I adapt.',
-};
 
 export const roleById = (id: RoleId) => ROLES.find((r) => r.id === id)!;
 
@@ -76,7 +66,6 @@ export interface Chapter {
   label: string;
   title: string;
   copy: string;
-  tags: string[];
   role?: RoleId;
   /** What lives on the page: a 3D line sketch (see sketch/registry.ts) or a flat 2D visual. */
   visual: Visual;
@@ -92,7 +81,6 @@ export const CHAPTERS: Chapter[] = [
     visual: 'logic',
     title: 'Systems that stay clean.',
     copy: 'Scalable backends with Spring Boot, fluid UIs with Angular Signals, and a clean bridge in between: vertical feature slices, explicit use cases and setups that start with a single command.',
-    tags: ['Java', 'Spring Boot', 'PostgreSQL', 'Angular', 'Docker'],
     role: 'architect',
   },
   {
@@ -100,7 +88,6 @@ export const CHAPTERS: Chapter[] = [
     visual: 'pico',
     title: 'Close to the hardware.',
     copy: 'I love the moment code leaves the screen and does something in the room: radar sensors on a Raspberry Pi, microcontrollers driving LEDs, clocks that tell time in words.',
-    tags: ['Python', 'C++', 'Raspberry Pi', 'Microcontrollers'],
     role: 'embedded',
   },
   {
@@ -108,7 +95,6 @@ export const CHAPTERS: Chapter[] = [
     visual: 'inks',
     title: 'Visual intuition.',
     copy: 'I translate complex workflows into intentional UX. From a vector-perfect Illustrator asset to a Figma prototype, designed with technical constraints in mind and motion that feels physical.',
-    tags: ['UI / UX', 'Figma', 'Illustrator', 'Print'],
     role: 'designer',
   },
   {
@@ -116,14 +102,12 @@ export const CHAPTERS: Chapter[] = [
     visual: 'charts',
     title: 'The business interface.',
     copy: 'Code exists to solve market problems. I am deepening my understanding of financial modeling and entrepreneurial leadership, so technical decisions line up with long-term ROI.',
-    tags: ['Economics', 'Corporate Finance', 'MBA Candidate'],
   },
   {
     label: 'Analog',
     visual: 'analog',
     title: 'Off screen.',
     copy: 'Most likely on a road bike, climbing the Taunus. Long rides are where the best solutions arrive: steady output, no wasted watts, patience on the long climbs. On rainy days, a guitar or a game of chess.',
-    tags: ['Road cycling', 'Guitar', 'Chess'],
   },
 ];
 

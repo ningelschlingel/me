@@ -1,5 +1,5 @@
-import { Component, ElementRef, afterRenderEffect, computed, inject, input, output } from '@angular/core';
-import { Columns, TileState, Viewport, WIDE } from '../../layout';
+import { Component, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, inject, input, output, signal } from '@angular/core';
+import { TileState, Viewport } from '../../layout';
 import { canScroll } from '../../scroll';
 
 export type { TileState };
@@ -15,6 +15,7 @@ export const INTERACTIVE = 'a, button, input, select, textarea, label, [data-no-
     '[attr.data-state]': 'state()',
     '[style.flex-grow]': 'grow()',
     '[attr.inert]': "state() === 'hidden' ? '' : null",
+    '[attr.data-pinned]': "pinned() ? '' : null",
     '(pointerdown)': 'onPointerDown($event)',
     '(touchstart)': 'onTouchStart($event)',
     '(touchend)': 'onTouchEnd($event)',
@@ -32,8 +33,7 @@ export class Tile {
   /** flex-grow, decided by the deck (layout.ts). */
   readonly grow = input(1);
   /** How this tile's open view splits into columns (desktop). */
-  readonly columns = input<Columns>(WIDE);
-  readonly spread = computed(() => this.viewport.spread(this.columns()));
+  readonly spread = computed(() => this.viewport.spread());
 
   readonly activate = output<void>();
   readonly dismiss = output<void>();
@@ -43,10 +43,21 @@ export class Tile {
 
   private readonly viewport = inject(Viewport);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private readonly destroyRef = inject(DestroyRef);
   private down: { x: number; y: number } | null = null;
   private swipe: { x: number; y: number; t: number; from: Element } | null = null;
 
   readonly open = computed(() => this.state() === 'peek' || this.state() === 'active');
+
+  /** The number of every page in this tile's pager (its data-num), for the dial. Set by the pager. */
+  readonly nums = signal<string[]>([]);
+
+  /**
+   * Phones: the menu opening over an open tile takes half the screen. The tile still gives it
+   * the room, but its content keeps the height it had (--body-h): nothing reflows or shrinks,
+   * the menu simply covers the lower half until it closes again.
+   */
+  readonly pinned = computed(() => this.state() === 'active' && !this.viewport.desktop() && this.viewport.navOpen());
 
   /** The tile's final width: rows always span the screen, columns get their share of the deck. */
   readonly targetWidth = computed(() =>
@@ -66,6 +77,17 @@ export class Tile {
       const frame = this.frame();
       if (frame > 0 && Math.abs(frame - this.viewport.frame()) > 0.5) this.viewport.frame.set(frame);
     });
+
+    // The body's height while nothing covers it, for pinning (see `pinned`).
+    afterNextRender(() => {
+      const body = this.host.querySelector<HTMLElement>(':scope > .body');
+      if (!body || typeof ResizeObserver === 'undefined') return;
+      const ro = new ResizeObserver(() => {
+        if (!this.pinned()) this.host.style.setProperty('--body-h', `${body.offsetHeight}px`);
+      });
+      ro.observe(body);
+      this.destroyRef.onDestroy(() => ro.disconnect());
+    });
   }
 
   /** Everything around the content: the title column (desktop) and the body padding. */
@@ -79,6 +101,16 @@ export class Tile {
       (parseFloat(style.paddingLeft) || 0) +
       (parseFloat(style.paddingRight) || 0)
     );
+  }
+
+  /**
+   * Where the pager is, as a continuous page index (1.5 = halfway from the second page to the
+   * third), every frame while it moves. Written straight to CSS (--progress), so the dial and the
+   * progress rule follow the finger without a change detection run per frame.
+   */
+  setProgress(progress: number, pages: number) {
+    this.host.style.setProperty('--progress', progress.toFixed(4));
+    this.host.style.setProperty('--pages', String(Math.max(1, pages)));
   }
 
   toggle() {
@@ -114,16 +146,19 @@ export class Tile {
   }
 
   /**
-   * A click anywhere opens a closed tile. An open one closes from its title bar and from any
-   * spot that isn't a control, unless the click was a drag or a text selection.
+   * A click anywhere opens a closed tile. An open one closes from its title bar, and on desktop
+   * also from any spot that isn't a control, unless the click was a drag or a text selection.
    */
   onClick(event: MouseEvent) {
     const target = event.target as Element;
     if (target.closest(INTERACTIVE)) return;
     if (this.state() !== 'active') return this.activate.emit();
+    if (target.closest('.head')) return this.dismiss.emit();
+    // Phones: only the header line closes. A tap on a page is reading, or poking a sketch.
+    if (!this.viewport.desktop()) return;
 
     const moved = this.down && Math.hypot(event.clientX - this.down.x, event.clientY - this.down.y) > 6;
     const selecting = !!getSelection?.()?.toString();
-    if (target.closest('.head') || (!moved && !selecting)) this.dismiss.emit();
+    if (!moved && !selecting) this.dismiss.emit();
   }
 }

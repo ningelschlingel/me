@@ -18,18 +18,34 @@
   --color-signal-deep: #d43f1f; /* the accent as text on paper (contrast ≥ 3:1 for large type) */
   --color-mango: #ffa630;
   --color-night: #2b2a27;
-  --color-night-2: #363430;
   --color-night-3: #44423d; /* image placeholders */
+
+  /* Type: self-hosted (angular.json), so every OS renders the same letters.
+     Geologica: a sturdy geometric sans with a Sharpness axis (SHRP 0 soft … 100 cut square).
+     The page runs sharp; a resting tile title is soft and sharpens as it opens (tile.css).
+     JetBrains Mono: the labels, chips and the sketches' annotations. */
+  --font-sans: 'Geologica Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 :root {
   --ease-snap: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-pop: cubic-bezier(0.68, -0.6, 0.32, 1.6);
-  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --mono: var(--font-mono);
+  /* How square the letters are cut. Set per element; the axis setting reads it. */
+  --sharp: 100;
 }
 
 html {
   background: var(--color-ink);
+  font-synthesis: none; /* every weight and slant is real: never let a fallback fake one */
+}
+/* Re-declared on every element so a --sharp set anywhere takes effect (font-variation-settings
+   would otherwise inherit already resolved). */
+*,
+::before,
+::after {
+  font-variation-settings: 'SHRP' var(--sharp);
 }
 
 /* Until the first layout has settled (see Home), nothing transitions: the page appears in place. */
@@ -60,9 +76,11 @@ body {
    Black (900) inside a page is reserved for the one punchline. */
 @layer components {
   /* Every pager page has the same anatomy: label row on a rule, title, and a
-     foot that sits at the bottom. That keeps tall pages full and columns aligned. */
+     foot that sits at the bottom. That keeps tall pages full and columns aligned.
+     Phones: the rule, the number and the label live in the tile's header line (tile.css),
+     so a page starts straight with its title. */
   .page {
-    @apply flex flex-col gap-4 border-t-2 border-current pt-3 lg:gap-6 lg:pt-4;
+    @apply flex flex-col gap-4 pt-4 lg:gap-6 lg:border-t-2 lg:border-current;
     container-type: inline-size;
   }
   /* A page with a sketch: content sits between the sketch's back and front layer. */
@@ -82,12 +100,12 @@ body {
     .page.scene > .stage { --stage-min: 6rem; }
   }
   .page-label {
-    @apply flex justify-between gap-4;
+    @apply hidden justify-between gap-4 lg:flex;
   }
   .page-title {
     @apply leading-[0.9] font-extrabold tracking-[-0.035em] uppercase;
     /* Sized by the column, so a 13-letter word always fits. */
-    font-size: clamp(1.75rem, min(11.5cqi, 6.5dvh), 3.75rem);
+    font-size: clamp(1.75rem, min(11cqi, 6.5dvh), 3.75rem);
   }
   .page-foot {
     @apply mt-auto flex flex-col items-start gap-4 lg:gap-5;

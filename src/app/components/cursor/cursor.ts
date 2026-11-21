@@ -1,5 +1,6 @@
 import { Component, DestroyRef, ElementRef, afterNextRender, inject, signal } from '@angular/core';
 import { Viewport } from '../../layout';
+import { edge } from '../pager/pager';
 import { INTERACTIVE } from '../tile/tile';
 
 /** Time constant of the follow curve: higher feels heavier. */
@@ -9,19 +10,20 @@ const IDLE_MS = 1400;
 const OFFSET = 18;
 
 /**
- * Mouse only: a small badge trails the pointer and says what a click does here.
- * "+" over a closed column, "×" over the open one, "↗" over a project that opens;
- * it steps aside over every other control.
+ * Mouse only: a small round badge trails the pointer and says what a click does here. It is the
+ * one pointer control on desktop: "+" over a closed column, "×" over the open one, and in
+ * the open one's page-turning edges it stretches into a pill with an arrow ("←" / "→"),
+ * like the current page's dot. "↗" over a project that opens; it steps aside over every
+ * other control.
  */
 @Component({
   selector: 'app-cursor',
   template: `
+    <!-- All three glyphs are always there; the state morphs between them (cursor.css). -->
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
-      @if (linking()) {
-        <path d="M7 17 17 7M9 7h8v8" />
-      } @else {
-        <path d="M4 12h16M12 4v16" />
-      }
+      <path class="cross" d="M4 12h16M12 4v16" />
+      <path class="turn" d="M4 12h15M13 6l6 6-6 6" />
+      <path class="out" d="M7 17 17 7M9 7h8v8" />
     </svg>
   `,
   styleUrl: './cursor.css',
@@ -29,6 +31,8 @@ const OFFSET = 18;
     'aria-hidden': 'true',
     '[class.on]': 'on()',
     '[class.close]': 'closing() && !linking()',
+    '[class.turn]': '!!turn() && !linking()',
+    '[class.back]': 'turn() < 0',
     '[class.link]': 'linking()',
     '[class.down]': 'down()',
   },
@@ -37,6 +41,8 @@ export class Cursor {
   readonly on = signal(false);
   readonly closing = signal(false);
   readonly linking = signal(false);
+  /** In a page-turning edge of the open tile: which way a click turns (-1, 1), else 0. */
+  readonly turn = signal<-1 | 0 | 1>(0);
   readonly down = signal(false);
 
   constructor() {
@@ -45,7 +51,7 @@ export class Cursor {
     const destroyRef = inject(DestroyRef);
 
     afterNextRender(() => {
-      let x = 0, y = 0, tx = 0, ty = 0, last = 0, frame = 0;
+      let x = 0, y = 0, tx = 0, ty = 0, px = 0, last = 0, frame = 0;
       let target: Element | null = null;
       let idle: ReturnType<typeof setTimeout> | undefined;
 
@@ -64,6 +70,7 @@ export class Cursor {
         const link = !!target?.closest('[data-cursor="link"]');
         const show = !!tile && (link || !target!.closest(INTERACTIVE)) && tile.dataset['state'] !== 'hidden';
         this.linking.set(link);
+        this.turn.set(show && tile!.dataset['state'] === 'active' ? turnAt(target!, px) : 0);
         if (show) {
           const style = getComputedStyle(tile);
           el.style.setProperty('--fg', style.color);
@@ -76,6 +83,7 @@ export class Cursor {
 
       const move = (event: PointerEvent) => {
         if (event.pointerType !== 'mouse') return;
+        px = event.clientX;
         tx = event.clientX + OFFSET;
         ty = event.clientY + OFFSET;
         target = event.target as Element;
@@ -105,4 +113,12 @@ export class Cursor {
       });
     });
   }
+}
+
+/** The way a click at x turns the pages under `target` (same strips as the pager), or 0. */
+function turnAt(target: Element, x: number): -1 | 0 | 1 {
+  const vp = target.closest<HTMLElement>('.pager-viewport');
+  if (!vp) return 0;
+  const dir = edge(vp.getBoundingClientRect(), x);
+  return (dir < 0 && vp.hasAttribute('data-prev')) || (dir > 0 && vp.hasAttribute('data-next')) ? dir : 0;
 }

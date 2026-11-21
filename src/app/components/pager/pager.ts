@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { Viewport } from '../../layout';
 import { canScroll } from '../../scroll';
-import { Tile } from '../tile/tile';
+import { INTERACTIVE, Tile } from '../tile/tile';
 
 /**
  * Horizontal, swipeable pages with their own gesture engine.
@@ -27,6 +27,10 @@ import { Tile } from '../tile/tile';
  * swipes move the track 1:1; letting go hands the gesture's velocity to the spring,
  * which settles on a page. No native scroll-snap, so nothing snaps late or fights back.
  * Pages still scroll vertically on their own, natively.
+ *
+ * Mouse, open tile: the outer strips of the viewport turn the page on click (the cursor
+ * badge turns into an arrow there, and the pages lean that way). Everywhere else a click
+ * still closes the tile.
  */
 @Component({
   selector: 'app-pager',
@@ -45,8 +49,6 @@ export class Pager {
   /** The page we are at or heading to. */
   readonly index = signal(0);
   readonly dragging = signal(false);
-  /** The swipe hint is showing. */
-  readonly hinting = signal(false);
 
   /** Width the pages were laid out for. */
   private view = 0;
@@ -62,6 +64,7 @@ export class Pager {
   private gesture: Gesture | null = null;
   private wheel = new WheelState();
   private suppressClick = 0;
+  private leaning: -1 | 0 | 1 = 0;
   private nudgeTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
@@ -116,9 +119,9 @@ export class Pager {
       });
     });
 
-    // Once per visit: if nobody has paged yet, the first open pager wiggles to say "swipe me".
+    // Once per visit (phones): if nobody has paged yet, the first open pager nudges to say "swipe me".
     effect(() => {
-      const open = this.tile ? this.tile.state() === 'active' || this.tile.state() === 'peek' : true;
+      const open = this.tile ? this.tile.state() === 'active' : true;
       const pages = this.stops().length;
       untracked(() => {
         clearTimeout(this.nudgeTimer);
@@ -178,6 +181,7 @@ export class Pager {
 
   onPointerMove(event: PointerEvent) {
     const g = this.gesture;
+    if (!g?.live && event.pointerType === 'mouse') this.lean(this.edgeAt(event));
     if (!g || g.id !== event.pointerId) return;
     if (this.dragMove(event.clientX, event.clientY, event.timeStamp) === 'started')
       this.viewportRef().nativeElement.setPointerCapture?.(event.pointerId);
@@ -187,6 +191,33 @@ export class Pager {
     const g = this.gesture;
     if (!g || g.id !== event.pointerId) return;
     this.dragEnd(event.timeStamp);
+  }
+
+  /** A click in a page-turning edge turns the page instead of closing the tile. */
+  onClick(event: MouseEvent) {
+    const dir = this.edgeAt(event);
+    if (!dir || getSelection?.()?.toString()) return;
+    event.stopPropagation();
+    this.go(this.index() + dir, 0);
+    this.lean(this.edgeAt(event));
+  }
+
+  /** The pages lean a little towards an edge that would turn them: "this way". */
+  lean(dir: -1 | 0 | 1) {
+    if (reducedMotion()) dir = 0;
+    if (dir === this.leaning) return;
+    this.leaning = dir;
+    this.trackRef().nativeElement.style.translate = dir ? `${-dir * LEAN_PX}px 0` : '';
+  }
+
+  /** Which way a click here would turn the page (mouse, open tile, not on a control), or 0. */
+  private edgeAt(event: MouseEvent): -1 | 0 | 1 {
+    const target = event.target as Element;
+    if (!this.tile || this.tile.state() !== 'active' || !this.screen.fine || !this.screen.desktop()) return 0;
+    if (target.closest(INTERACTIVE)) return 0;
+    const dir = edge(this.viewportRef().nativeElement.getBoundingClientRect(), event.clientX);
+    const next = this.index() + dir;
+    return dir && next >= 0 && next < this.stops().length ? dir : 0;
   }
 
   private onTouch(event: TouchEvent) {
@@ -220,6 +251,7 @@ export class Pager {
       if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) return void (this.gesture = null);
       if (Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(dy) * 1.1) return;
       g.live = started = true;
+      this.lean(0);
       g.x0 = cx; // no jump from the dead zone
       g.from = this.x;
       this.dragging.set(true);
@@ -255,14 +287,14 @@ export class Pager {
   }
 
   /**
-   * The once-per-visit hint: nothing moves, a soft glow with a chevron pulses twice at the
-   * right edge ("there is more this way"). Compositor-only (opacity), so it is smooth everywhere.
+   * The once-per-visit hint, phones only: the pages get a small push towards the next one and
+   * spring back, as if someone had flicked them. The dial and the progress rule in the header
+   * move along, so one gesture teaches all three. Reduced motion: no push.
    */
   private nudge() {
-    if (nudged || this.gesture || this.index() !== 0) return;
+    if (nudged || this.gesture || this.index() !== 0 || this.screen.desktop() || reducedMotion()) return;
     nudged = true;
-    this.hinting.set(true);
-    this.nudgeTimer = setTimeout(() => this.hinting.set(false), HINT_MS);
+    this.settle(this.target, NUDGE_VELOCITY);
   }
 
   /**
@@ -367,6 +399,17 @@ export class Pager {
 
   private paint() {
     this.trackRef().nativeElement.style.transform = `translate3d(${-this.x}px, 0, 0)`;
+    this.tile?.setProgress(this.progress(this.x), this.stops().length);
+  }
+
+  /** Offset → continuous page index (2.5 = halfway between the third and the fourth stop). */
+  private progress(x: number) {
+    const s = this.stops();
+    const n = s.length;
+    if (n < 2) return 0;
+    let k = 0;
+    while (k < n - 2 && x > s[k + 1]) k++;
+    return k + (x - s[k]) / (s[k + 1] - s[k] || 1);
   }
 
   /** Past either end, the track follows with growing resistance. */
@@ -420,7 +463,7 @@ export class Pager {
         let col: number;
         if (this.tile && this.screen.desktop()) {
           // As many of the tile's own columns as the destination holds, stretched to fill it exactly.
-          // (Reading tiles: identical in peek and open. INDEX: one big card in peek, three when open.)
+          // (Identical in peek and open: a peek is exactly one of them.)
           const target = this.tile.spread().col;
           cols = Math.max(1, Math.round((width + gap) / (target + gap)));
           col = (width - gap * (cols - 1)) / cols;
@@ -450,6 +493,12 @@ export class Pager {
     }
     for (const page of this.pages()) page.classList.toggle('can-scroll', page.scrollHeight - page.clientHeight > 2);
     this.stops.set(stops);
+    // The dial's faces: each stop's page number (its data-num), or its position.
+    if (this.tile) {
+      const pages = this.pages();
+      const nums = stops.map((stop, i) => pages.find((p) => Math.min(p.offsetLeft, max) === stop)?.dataset['num'] ?? String(i).padStart(2, '0'));
+      if (nums.join() !== this.tile.nums().join()) this.tile.nums.set(nums);
+    }
     const index = Math.min(this.index(), stops.length - 1);
     this.index.set(index);
     // Stay on the current page through any resize (but never yank a gesture in progress).
@@ -458,9 +507,9 @@ export class Pager {
       this.target = stops[index];
       if (!this.frame) {
         this.x = this.target;
-        this.paint();
       }
     }
+    if (!this.frame) this.paint();
   }
 }
 
@@ -529,8 +578,22 @@ class WheelState {
 /** The swipe hint runs once per visit, and never after the visitor has paged by themselves. */
 let nudged = false;
 const interacted = () => (nudged = true);
-const NUDGE_AFTER_MS = 2600;
-const HINT_MS = 2800;
+const NUDGE_AFTER_MS = 1400;
+/** px/s: the spring carries the pages about 1.5rem before it brings them back. */
+const NUDGE_VELOCITY = 650;
+
+/** How far the pages lean towards a page-turning edge, px. */
+const LEAN_PX = 8;
+
+/**
+ * The page-turning strips: the outer fifth of the viewport on either side, at most 160px.
+ * -1 left, 1 right, 0 in between. Shared with the cursor badge, so both agree on the spot.
+ */
+export function edge(viewport: DOMRect, x: number): -1 | 0 | 1 {
+  const strip = Math.min(viewport.width * 0.2, 160);
+  if (x < viewport.left || x > viewport.right) return 0;
+  return x < viewport.left + strip ? -1 : x > viewport.right - strip ? 1 : 0;
+}
 
 /** Minimum page width when a pager doesn't set --page-w. */
 const DEFAULT_PAGE_W = '22rem';

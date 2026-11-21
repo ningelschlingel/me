@@ -28,7 +28,7 @@ export interface Body {
 const K = 2.6;
 const C = 1.9;
 /** Balloons never rush: the fastest they ever go (units/s). */
-const TOP_SPEED = 2.4;
+const TOP_SPEED = 3;
 /** The breeze while arriving: its strength, and how fast it dies down (s). */
 const WIND = 0.9;
 const WIND_S = 3.5;
@@ -68,7 +68,7 @@ export class Magnets {
       return;
     }
     launch(this.q, tile.left - 1.1, tile.top + 0.5, 0, 3.5, 1);
-    launch(this.b, tile.right + 1.1, Math.min(tile.bottom - 0.4, -1.6), 0.5, -3, -0.8);
+    launch(this.b, tile.right + 1.1, Math.min(tile.bottom - 0.4, -1.6), 0.3, -3, -0.8);
     this.nextPull = 6 + 3 * Math.random();
   }
 

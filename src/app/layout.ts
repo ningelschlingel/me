@@ -32,10 +32,8 @@ export interface Columns {
   min: number;
   cols: [number, number];
 }
-/** Reading pages: two generous columns, three on very wide screens. */
+/** Every tile's pages, INDEX included: two generous columns, three on very wide screens. */
 export const WIDE: Columns = { min: 36, cols: [2, 3] };
-/** Project cards: as many as fit at a comfortable card width. */
-export const CARDS: Columns = { min: 19, cols: [2, 4] };
 
 /**
  * rest   – browsing, title only
