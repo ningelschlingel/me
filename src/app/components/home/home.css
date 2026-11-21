@@ -41,7 +41,7 @@
 .answer-badge {
   align-self: flex-start;
   padding: 0.35rem 0.75rem;
-  background: var(--color-signal);
+  background: var(--color-answer);
   color: var(--color-ink);
   font-size: 1.25rem;
   font-weight: 900;

@@ -94,9 +94,7 @@ export function blurAt(s: number, i: number): number {
       inset: 0;
       pointer-events: none;
       overflow: hidden;
-      transition: opacity 0.3s;
     }
-    :host(.settling) { opacity: 0; transition: none; }
     canvas { position: absolute; left: 0; top: 0; }
     .lines { width: 100%; height: 100%; }
   `,

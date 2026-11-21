@@ -42,7 +42,7 @@ uniform vec4 q;       // the question mark: x, y (units), turn about y, roll
 uniform vec4 b;       // the exclamation mark, likewise
 uniform float t;      // idle loop phase 0..1
 uniform vec2 lean;    // camera lean from the rig (yaw, pitch)
-uniform vec3 base;    // mango
+uniform vec3 base;    // --color-mark
 uniform vec3 bg;      // card colour, for the environment
 
 const float TAU = 6.28318530718;
@@ -197,8 +197,6 @@ type GL = WebGLRenderingContext | WebGL2RenderingContext;
 
 /** Units across the shorter side of the resting box: the marks just fill it. */
 const UNITS = 1.775;
-/** Out of sight for at least this long counts as gone: the next arrival flies in again. */
-const GONE_MS = 150;
 /**
  * A tile that opens sends its marks off this long after it started opening: by then it has
  * reached its size and its pages their layout, so "outside" and the marks' scale are measured
@@ -278,13 +276,15 @@ export class Marks {
       const uRes = u('res'), uRest = u('rest'), uQ = u('q'), uB = u('b'), uT = u('t'), uLean = u('lean');
 
       const style = getComputedStyle(document.documentElement);
-      gl.uniform3fv(u('base'), rgb(style.getPropertyValue('--color-mango').trim() || '#ffa630'));
+      gl.uniform3fv(u('base'), rgb(style.getPropertyValue('--color-mark').trim() || '#ff8c32'));
       gl.uniform3fv(u('bg'), rgb(getComputedStyle(frameEl).backgroundColor));
 
       const calm = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
       const magnets = new Magnets(calm);
       const PERIOD = 7000;
-      let elapsed = 0, last = 0, frame = 0, visible = false, shown = false, goneAt = -Infinity;
+      let elapsed = 0, last = 0, frame = 0, visible = false, shown = false;
+      /** The tile visit they last flew in for (Tile.visit); undefined: never yet. */
+      let arrived: number | undefined;
       /** A pending arrival: when they take off (performance.now()), or -1. */
       let launchAt = -1;
       let dpr = 1, rest = { x: 0, y: 0, unit: 100 };
@@ -364,15 +364,15 @@ export class Marks {
         frame = shown ? requestAnimationFrame(loop) : 0;
       };
 
-      // In sight = in view and in an open tile. Out of sight long enough = gone: the next
-      // arrival flies in again. Only then; a tile resizing around them changes nothing.
+      // In sight = in view and in an open tile. They fly in once per visit of their tile: out of
+      // sight and back (a page swiped away, the tile opened from its peek) they just carry on.
+      // Entering the tile from another one again sends them off again.
       this.check = () => {
         const now = performance.now();
         const next = visible && (this.tile?.open() ?? true) && !document.hidden;
         if (next === shown) return;
         shown = next;
         if (!next) {
-          goneAt = now;
           // Out of sight: leave nothing behind on the tile.
           cancelAnimationFrame(frame);
           frame = 0;
@@ -381,7 +381,11 @@ export class Marks {
         }
         // Arrivals are measured and launched from the loop, never here: this runs while the
         // tile has only just been told to open, before anything has its new layout.
-        if (now - goneAt > GONE_MS) launchAt = Math.max(now, this.openedAt + LAUNCH_MS);
+        const visit = this.tile?.visit() ?? 0;
+        if (visit !== arrived) {
+          arrived = visit;
+          launchAt = Math.max(now, this.openedAt + LAUNCH_MS);
+        }
         if (!frame) {
           last = now;
           frame = requestAnimationFrame(loop);

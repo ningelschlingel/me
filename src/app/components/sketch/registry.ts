@@ -1,6 +1,6 @@
 import { Scene, TAU } from './math';
 import { architect, designer, embedded } from './scenes';
-import { analog, heart } from './scenes-me';
+import { heart } from './scenes-me';
 import { camera, ride, train } from './scenes-ours';
 
 /**
@@ -11,7 +11,7 @@ import { camera, ride, train } from './scenes-ours';
  */
 export type SketchKind =
   | 'architect' | 'embedded' | 'designer'
-  | 'heart' | 'analog'
+  | 'heart'
   | 'train' | 'ride';
 
 interface Entry {
@@ -44,7 +44,6 @@ export const SCENES: Record<SketchKind, Entry> = {
 
   // Each ME object has its own spot and its own angle, so the slides don't repeat each other.
   heart: { scene: heart, period: 9600, yaw: 0.28, pitch: 0.3, place: { x: 0.1 } },
-  analog: { scene: analog, period: 9000, yaw: 0.3, pitch: 0.22, place: { x: -0.35 } },
 
   // Low, along the track: the train comes at you, the camera swings round and watches it go.
   train: { scene: train, period: 15000, yaw: 0, pitch: 0, frame: { minX: -1.55, maxX: 1.55, minY: -1.5, maxY: 1.45 }, place: { x: 0.3 }, focus: (t) => 4.2 - camera(t).dist },

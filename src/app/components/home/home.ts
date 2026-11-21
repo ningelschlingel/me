@@ -1,9 +1,10 @@
-import { Component, ElementRef, afterNextRender, computed, effect, inject, signal } from '@angular/core';
+import { Component, ElementRef, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { CHAPTERS, LINKEDIN, MAIL, PROJECTS, Project, ROLES, RoleId, STRAVA, roleById } from '../../content';
 import { DECK_GROW, Viewport, tileGrow } from '../../layout';
 import { RoleState } from '../../role-state';
 import { Hero } from '../hero/hero';
+import { Bike } from '../bike/bike';
 import { Charts } from '../charts/charts';
 import { Inks } from '../inks/inks';
 import { Pico } from '../pico/pico';
@@ -24,7 +25,7 @@ const INDEX = TILES.indexOf('index');
 
 @Component({
   selector: 'app-home',
-  imports: [Tile, Pager, Hero, Kick, Sketch, Inks, Pico, Charts, Marks, Modules, NgTemplateOutlet],
+  imports: [Tile, Pager, Hero, Kick, Sketch, Inks, Pico, Charts, Marks, Modules, Bike, NgTemplateOutlet],
   templateUrl: './home.html',
   styleUrl: './home.css',
   host: {
@@ -76,6 +77,14 @@ export class Home {
     const open = this.viewport.openGrow(TILES.length);
     return this.states().map((s) => tileGrow(s, open));
   });
+  /**
+   * Per tile, how often it was entered from another one: the open (peeking or active) tile
+   * changed to it. Closing a tile and opening it again, or peek → active, is the same visit;
+   * going YOU → ME → YOU is a new one, and its visuals play their entrance again.
+   */
+  readonly visits = signal(TILES.map(() => 0));
+  private segment: number | null = null;
+
   /** Each tile's final part of the deck, so its pages can be laid out before it gets there. */
   readonly shares = computed(() => {
     const grows = this.grows();
@@ -84,6 +93,13 @@ export class Home {
   });
 
   constructor() {
+    effect(() => {
+      const i = this.states().findIndex((s) => s === 'active' || s === 'peek');
+      if (i === -1 || i === this.segment) return;
+      this.segment = i;
+      untracked(() => this.visits.update((v) => v.map((n, j) => (j === i ? n + 1 : n))));
+    });
+
     // While the filter's options are open, the first tap anywhere else only folds them away: it
     // doesn't also close the tile or jump to a project.
     effect((onCleanup) => {

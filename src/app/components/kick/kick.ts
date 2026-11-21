@@ -1,4 +1,5 @@
 import { DestroyRef, Directive, ElementRef, afterNextRender, effect, inject, input, untracked } from '@angular/core';
+import { Tile } from '../tile/tile';
 
 /**
  * Quick, bouncy zoom: overshoot, settle. Short enough to feel like a wink, not a show.
@@ -16,8 +17,10 @@ const KEYFRAMES: Keyframe[] = [
 const TIMING: KeyframeAnimationOptions = { duration: 560, delay: 300, fill: 'backwards', easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' };
 
 /**
- * The attention kicker for answers ("I can do that."). Plays when its value
- * changes and whenever it comes into view, e.g. when a page is swiped in.
+ * The attention kicker for answers ("I can do that."). Plays when its value changes and the
+ * first time it comes into view in a visit of its tile (Tile.visit). Swiping away and back,
+ * or opening the peeking tile, leaves it standing; entering the tile from another one again
+ * plays it again.
  */
 @Directive({
   selector: '[appKick]',
@@ -27,13 +30,26 @@ const TIMING: KeyframeAnimationOptions = { duration: 560, delay: 300, fill: 'bac
 export class Kick {
   readonly appKick = input<unknown>();
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private readonly tile = inject(Tile, { optional: true });
   private visible = false;
   private anim?: Animation;
+  /** The visit it last played in; undefined: still to play. */
+  private played?: number;
 
   constructor() {
     effect(() => {
       this.appKick();
       untracked(() => this.visible && this.play());
+    });
+    // A new visit: hidden again, to play the next time it is in view (now, if it already is).
+    effect(() => {
+      const visit = this.tile?.visit() ?? 0;
+      untracked(() => {
+        if (this.played === undefined || this.played === visit) return;
+        this.played = undefined;
+        this.hide();
+        if (this.visible) this.play();
+      });
     });
 
     const destroyRef = inject(DestroyRef);
@@ -42,9 +58,7 @@ export class Kick {
       const io = new IntersectionObserver(
         ([entry]) => {
           const now = entry.intersectionRatio >= 0.6;
-          if (now && !this.visible) this.play();
-          // Leaving the view resets it, so the next arrival animates in cleanly.
-          if (!now && entry.intersectionRatio < 0.05) this.hide();
+          if (now && !this.visible && this.played === undefined) this.play();
           this.visible = now;
         },
         { threshold: [0, 0.05, 0.6] },
@@ -60,6 +74,7 @@ export class Kick {
   }
 
   private play() {
+    this.played = this.tile?.visit() ?? 0;
     this.anim?.cancel();
     this.el.style.opacity = '0';
     if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches) {

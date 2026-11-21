@@ -57,9 +57,7 @@ export function poseAt(t: number) {
       inset: 0;
       pointer-events: none;
       overflow: hidden;
-      transition: opacity 0.3s;
     }
-    :host(.settling) { opacity: 0; transition: none; }
     canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   `,
   host: { 'aria-hidden': 'true' },

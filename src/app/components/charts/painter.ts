@@ -97,6 +97,13 @@ export class ChartsPainter {
     this.pen = pen;
   }
 
+  /** The clock starts over: the charts sweep in again, carrying on from the prices they had. */
+  restart() {
+    this.ticks = 0;
+    this.last = 0;
+    for (const v of this.views) v.high = -Infinity;
+  }
+
   /** One frame; `elapsed`: the local clock, ms. */
   draw(elapsed: number) {
     const c = this.ctx;

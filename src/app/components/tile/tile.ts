@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, effect, inject, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, afterRenderEffect, computed, effect, inject, input, linkedSignal, output, signal } from '@angular/core';
 import { TileState, Viewport } from '../../layout';
 import { canScroll } from '../../scroll';
 
@@ -13,6 +13,7 @@ export const INTERACTIVE = 'a, button, input, select, textarea, label, [data-no-
   styleUrl: './tile.css',
   host: {
     '[attr.data-state]': 'state()',
+    '[attr.data-from]': 'from()',
     '[style.flex-grow]': 'grow()',
     '[attr.inert]': "state() === 'hidden' ? '' : null",
     '[attr.data-pinned]': "pinned() ? '' : null",
@@ -26,12 +27,25 @@ export const INTERACTIVE = 'a, button, input, select, textarea, label, [data-no-
 })
 export class Tile {
   readonly state = input.required<TileState>();
+  /**
+   * The state this tile came from. Phones: stepping from one open tile to the next (active to
+   * hidden, hidden to active) swaps the headers without lifting the title; tile.css.
+   */
+  readonly from = linkedSignal<TileState, TileState | null>({
+    source: this.state,
+    computation: (_state, prev) => prev?.source ?? null,
+  });
   readonly tileTitle = input.required<string>();
   readonly tileSubtitle = input('');
   /** This tile's part of the deck once the current transition has finished (0…1). */
   readonly share = input(1);
   /** flex-grow, decided by the deck (layout.ts). */
   readonly grow = input(1);
+  /**
+   * Counts the times this tile was entered from another one (see Home.visits). Visuals play
+   * their entrance once per visit: paging around or opening the peeking tile never replays it.
+   */
+  readonly visit = input(0);
   /** How this tile's open view splits into columns (desktop). */
   readonly spread = computed(() => this.viewport.spread());
 

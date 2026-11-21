@@ -60,6 +60,8 @@ export class Pager {
   private target = 0;
   private frame = 0;
   private last = 0;
+  /** The frame loop is following a growing tile's edge (see follow), not the spring. */
+  private following = false;
 
   private gesture: Gesture | null = null;
   private wheel = new WheelState();
@@ -369,12 +371,52 @@ export class Pager {
   }
 
   private settle(to: number, velocity: number) {
+    if (this.following) {
+      cancelAnimationFrame(this.frame);
+      this.frame = 0;
+      this.following = false;
+    }
     this.target = to;
     this.v = reducedMotion() ? 0 : velocity; // reduced motion: a calm glide, no fling
     if (!this.frame) {
       this.last = performance.now();
       this.frame = requestAnimationFrame(this.step);
     }
+  }
+
+  /**
+   * The tile is growing and the layout (already done for its open width) pulled the track back
+   * from `from` to the target: typically the last page in a preview, whose stop merges into the
+   * one before it once two columns fit. Instead of jumping there while the tile is still narrow,
+   * the track keeps its end on the viewport's growing edge, frame by frame: the last page rides
+   * along with the edge and the one before it slides in to fill the gap.
+   *
+   * CSS does the following, not JS: the track is as wide as the viewport, so a percentage of
+   * its own width is the viewport's width as the browser lays it out, in the same frame (a JS
+   * loop reading clientWidth is a frame late and lags the edge). Where the tile has landed, that
+   * position is exactly the target, so handing back to the spring's transform is seamless.
+   */
+  private follow(from: number) {
+    const vp = this.viewportRef().nativeElement;
+    const pages = this.pages();
+    const lastPage = pages[pages.length - 1];
+    const end = lastPage ? lastPage.offsetLeft + lastPage.offsetWidth : 0;
+    const start = performance.now();
+    this.following = true;
+    this.x = this.target;
+    this.trackRef().nativeElement.style.transform =
+      `translate3d(clamp(${-from}px, calc(100% - ${end}px), ${-this.target}px), 0, 0)`;
+    this.tile?.setProgress(this.progress(this.target), this.stops().length);
+    const tick = (now: number) => {
+      if (vp.clientWidth < this.view - 1 && now - start < FOLLOW_MS) {
+        this.frame = requestAnimationFrame(tick);
+        return;
+      }
+      this.following = false;
+      this.frame = 0;
+      this.paint();
+    };
+    this.frame = requestAnimationFrame(tick);
   }
 
   /** A slightly underdamped spring (ζ ≈ 0.9): quick, soft landing, no visible wobble. */
@@ -476,7 +518,10 @@ export class Pager {
           col = (width - gap * (cols - 1)) / cols;
         }
         const px = `${col.toFixed(2)}px`;
-        const resized = track.style.getPropertyValue('--col') !== px;
+        // Only a real re-flow counts: a preview and its open view differ by rounding (half a
+        // px), and fading the whole track for that made every visual blink on open and close.
+        const before = parseFloat(track.style.getPropertyValue('--col'));
+        const resized = !(Math.abs(before - col) <= REFLOW_PX);
         track.style.setProperty('--cols', String(cols));
         track.style.setProperty('--col', px);
         this.view = width;
@@ -508,9 +553,16 @@ export class Pager {
     const steering = this.gesture?.live || !this.wheel.ended(performance.now());
     if (!steering && this.target !== stops[index]) {
       this.target = stops[index];
-      if (!this.frame) {
-        this.x = this.target;
-      }
+      // Pulled back while the tile is still growing towards the width laid out for: follow its
+      // edge there (see follow), from wherever the pages are, even mid-spring (a page turned
+      // just before the click). Otherwise there is nothing on screen to keep: just be there.
+      const growing = this.viewportRef().nativeElement.clientWidth < this.view - 1;
+      if (growing && this.x > this.target) {
+        cancelAnimationFrame(this.frame);
+        this.frame = 0;
+        this.v = 0;
+        this.follow(this.x);
+      } else if (!this.frame) this.x = this.target;
     }
     if (!this.frame) this.paint();
   }
@@ -584,6 +636,12 @@ const interacted = () => (nudged = true);
 const NUDGE_AFTER_MS = 1400;
 /** px/s: the spring carries the pages about 1.5rem before it brings them back. */
 const NUDGE_VELOCITY = 650;
+
+/** Longest a track follows a growing tile's edge (the tile's own move is 0.7 s), ms. */
+const FOLLOW_MS = 1100;
+
+/** Pages whose width changes by no more than this (px) have not re-flowed: no fade. */
+const REFLOW_PX = 4;
 
 /** How far the pages lean towards a page-turning edge, px. */
 const LEAN_PX = 8;

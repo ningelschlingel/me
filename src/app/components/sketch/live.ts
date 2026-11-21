@@ -3,7 +3,7 @@ import { Tile } from '../tile/tile';
 
 /** With reduced motion, visuals keep living, just slowly. */
 const CALM_SPEED = 0.35;
-/** A tile's open/close transition (tile.css) plus a breath. */
+/** A tile's open/close transition (tile.css) plus a breath: then the layout is checked once more. */
 const SETTLE_MS = 780;
 
 /** What a canvas visual in a card provides; `live` runs it. */
@@ -14,13 +14,19 @@ export interface Painter {
   resize(): void;
   /** One frame. `elapsed` is a local clock (ms) that only runs while the visual is live. */
   draw(now: number, elapsed: number, calm: boolean): void;
+  /** The clock went back to zero (a new visit): forget anything kept from the last one. */
+  restart?(): void;
 }
 
 /**
  * Runs a canvas visual inside its card, the way every visual on the site behaves:
- * it draws only while in view, in an open tile and not hidden; it rests (faded out) while
- * its tile moves, then lays itself out once and fades back in; and it honours reduced motion.
- * The host gets the class `settling` while it rests (see sketch.css).
+ * it draws only while in view, in an open tile and not hidden; it stays on screen and keeps
+ * drawing while its tile opens or closes, laid out again whenever its card changes size; and
+ * it honours reduced motion.
+ *
+ * Its clock starts at zero once per visit of its tile (Tile.visit): within a visit it only
+ * pauses (out of view, tile moving) and carries on, so an entrance plays once. Coming back
+ * from another tile starts it over.
  *
  * Call from a constructor (it needs an injection context).
  */
@@ -29,30 +35,38 @@ export function live(host: HTMLElement, painter: Painter) {
   const tile = inject(Tile, { optional: true });
 
   let visible = false;
-  let settling = false;
   let settleTimer: ReturnType<typeof setTimeout> | undefined;
   let restart = () => {};
   let relayout = () => {};
+  let repaint = () => {};
   let elapsed = 0;
   let last = 0;
   let frame = 0;
 
-  // A tile that opens or closes changes its pages' size for 0.7 s. Drawing into a canvas that
-  // is being resized every frame is wasted work (and would stretch), so the visual rests until
-  // the tile has landed, then lays itself out once and fades in.
+  // A new visit: start over, and show it at once (no frame from the last visit lingers).
+  let visit = untracked(() => tile?.visit());
+  effect(() => {
+    const next = tile?.visit();
+    untracked(() => {
+      if (next === visit) return;
+      visit = next;
+      elapsed = 0;
+      painter.restart?.();
+      repaint();
+    });
+  });
+
+  // A tile that opens or closes: the visual never leaves the screen. It keeps drawing right
+  // through the move (any size change of its card is followed frame by frame, see the
+  // ResizeObserver), starts at once if the tile just opened, and once the tile has landed its
+  // layout is checked one more time, in case only the stage moved inside an unchanged card.
   effect(() => {
     const state = tile?.state();
     untracked(() => {
       if (state === undefined) return;
-      settling = true;
-      host.classList.add('settling');
+      restart();
       clearTimeout(settleTimer);
-      settleTimer = setTimeout(() => {
-        settling = false;
-        relayout();
-        restart();
-        host.classList.remove('settling');
-      }, SETTLE_MS);
+      settleTimer = setTimeout(() => relayout(), SETTLE_MS);
     });
   });
 
@@ -62,8 +76,8 @@ export function live(host: HTMLElement, painter: Painter) {
     const calm = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const paint = (now: number) => painter.draw(now, elapsed, calm);
 
-    /** Draw only what can be seen: in view, in an open tile, and not while the tile is still moving. */
-    const isLive = () => visible && !settling && (tile?.open() ?? true);
+    /** Draw only what can be seen: in view and in an open tile. */
+    const isLive = () => visible && (tile?.open() ?? true);
     const loop = (now: number) => {
       // Local clock that only runs while live; capped steps keep it smooth after stalls.
       elapsed += Math.min(50, Math.max(0, now - last)) * (calm ? CALM_SPEED : 1);
@@ -79,7 +93,6 @@ export function live(host: HTMLElement, painter: Painter) {
     restart = start;
 
     const ro = new ResizeObserver(() => {
-      if (settling) return; // redone when the tile has landed
       painter.resize();
       paint(performance.now());
     });
@@ -100,6 +113,7 @@ export function live(host: HTMLElement, painter: Painter) {
     };
     document.addEventListener('visibilitychange', onVisibility);
 
+    repaint = () => paint(performance.now());
     relayout = () => {
       painter.resize();
       paint(performance.now());

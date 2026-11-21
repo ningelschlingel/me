@@ -74,7 +74,7 @@
 
 /* ── Phones ──────────────────────────────────────────────────────────────────────────────
    At rest a row is its big title and nothing else: no button, the whole band is the target.
-   Open, the title folds back like a flap falling over and one mono line takes its place:
+   Open, the title lifts away like a garage door and one mono line takes its place:
    the page number on a turning drum, the subtitle, a hairline ×. The 2px rule under it is the
    only rule on the page, and it shows where you are among the pages. */
 @media (width < 64rem) {
@@ -85,30 +85,37 @@
     display: block;
     height: calc(var(--title) * 0.85 + 2 * var(--pad-y));
     padding: 0;
-    perspective: 40rem;
-    perspective-origin: var(--pad) 100%;
-    transition: height 0.5s cubic-bezier(0.65, 0, 0.35, 1);
+    transition: height 0.6s 0.1s cubic-bezier(0.65, 0, 0.35, 1);
   }
-  :host([data-state='active']) .head { height: var(--line); }
+  :host([data-state='active']) .head {
+    height: var(--line);
+    transition: height 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  }
 
+  /* The title is a door on an overhead track, faked flat: it slides up out of the tile while
+     squashing toward its top edge. The bottom of the letters rises straight and faster than the
+     top, which seems to tip back under the ceiling. No 3D, one eased motion. */
   .title {
     position: absolute;
     left: var(--pad);
     top: var(--pad-y);
-    transform-origin: 0 100%;
-    /* Closing: it swings back up and settles with a small overshoot. */
+    transform-origin: 0 0;
+    /* Closing: the same way back down, unfolding as it comes. */
     transition:
-      transform 0.52s 0.12s cubic-bezier(0.34, 1.4, 0.5, 1),
-      opacity 0.2s 0.12s,
+      translate 0.55s 0.1s cubic-bezier(0.65, 0, 0.35, 1),
+      scale 0.55s 0.1s cubic-bezier(0.65, 0, 0.35, 1),
+      opacity 0.35s 0.15s,
       font-variation-settings 0.6s var(--ease-snap);
   }
-  /* Opening: it falls backwards under gravity (ease-in), cut sharp as it goes, gone by the end. */
+  /* Opening: up and out over the tile's top edge, cut sharp as it goes. */
   :host([data-state='active']) .title {
-    transform: rotateX(90deg);
+    translate: 0 calc(-100% - var(--pad-y));
+    scale: 1 0.35;
     opacity: 0;
     transition:
-      transform 0.38s cubic-bezier(0.55, 0, 0.75, 0.2),
-      opacity 0.14s 0.24s linear,
+      translate 0.55s cubic-bezier(0.65, 0, 0.35, 1),
+      scale 0.55s cubic-bezier(0.65, 0, 0.35, 1),
+      opacity 0.4s 0.1s,
       font-variation-settings 0.3s;
   }
   .sub { display: none; }
@@ -130,12 +137,12 @@
     translate: 0 0.6rem;
     transition: opacity 0.2s, translate 0.3s, visibility 0s 0.2s;
   }
-  /* It rises into the line once the title has started to fall, overshooting a hair. */
+  /* It rises into the line behind the title, once the title has started to tip back. */
   :host([data-state='active']) .line {
     opacity: 1;
     visibility: visible;
     translate: none;
-    transition: opacity 0.3s 0.16s, translate 0.36s 0.16s cubic-bezier(0.2, 0.9, 0.25, 1.15), visibility 0s;
+    transition: opacity 0.35s 0.4s, translate 0.45s 0.4s cubic-bezier(0.2, 0.9, 0.25, 1.1), visibility 0s;
   }
   .line-sub { overflow: hidden; text-overflow: ellipsis; opacity: 0.8; }
   /* Something in the slot (INDEX: the active filter) takes the subtitle's place. */
@@ -207,6 +214,18 @@
   .toggle:focus-visible,
   :host([data-state='active']) .toggle { opacity: 1; transition: opacity 0.3s 0.2s; }
   :host([data-state='active']) .toggle:active svg { rotate: 135deg; transition-duration: 0.2s; }
+
+  /* Stepping from one open tile to the next: one collapses while the other grows, so a title
+     lifting or dropping in both at once only reads as a flicker. The open header just goes
+     with its tile. The new tile arrives already open. The old one keeps its open header while
+     it collapses and resets once it's out of sight, ready to be a closed row again. */
+  :host([data-state='active'][data-from='hidden']) :is(.head, .title, .line, .progress, .toggle, .toggle svg) {
+    transition: none;
+  }
+  :host([data-state='hidden'][data-from='active']) :is(.head, .title, .line, .progress, .toggle, .toggle svg) {
+    transition-duration: 0s;
+    transition-delay: 0.7s;
+  }
 }
 
 .body {
@@ -276,6 +295,6 @@
 /* Reduced motion: the tile still glides (it explains where you went), content just fades. */
 @media (prefers-reduced-motion: reduce) {
   .body { translate: none !important; }
-  /* Phones: the title doesn't fall, the line doesn't rise: one crossfade. */
-  .title, .line { transform: none !important; translate: none !important; }
+  /* Phones: the title doesn't lift, the line doesn't rise: one crossfade. */
+  .title, .line { transform: none !important; translate: none !important; scale: none !important; }
 }

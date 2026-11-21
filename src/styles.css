@@ -7,7 +7,7 @@
    graphite    – a quiet gallery, so project images bring the colour (INDEX). Same warm-neutral
                  family as ink (no blue cast against the brown-black), one clear step lighter,
                  so the two sit together like paper stock and print, never melting into each other
-   mango       – one warm spark, used sparingly (the polished ?! in YOU, the lenses' glow)
+   mango       – one warm spark, used sparingly (the lenses' glow; the ?! in YOU leans from it towards signal)
    Cobalt and signal are complementary: playful together, used sparingly. */
 @theme {
   --color-paper: #f3eee5;
@@ -17,6 +17,10 @@
   --color-signal: #ff5b3a;
   --color-signal-deep: #d43f1f; /* the accent as text on paper (contrast ≥ 3:1 for large type) */
   --color-mango: #ffa630;
+  /* YOU's question and its answers meet halfway between mango and signal: the ?! a step
+     darker than mango, the answer badges a step lighter than signal. */
+  --color-mark: #ff8c32;
+  --color-answer: #ff7038;
   --color-night: #2b2a27;
   --color-night-3: #44423d; /* image placeholders */
 

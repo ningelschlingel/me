@@ -71,7 +71,7 @@ export interface Chapter {
 }
 
 /** Flat 2D visuals, each its own component (see Home's template). */
-export type FlatKind = 'inks' | 'pico' | 'charts' | 'modules';
+export type FlatKind = 'inks' | 'pico' | 'charts' | 'modules' | 'bike';
 export type Visual = SketchKind | FlatKind;
 
 export const CHAPTERS: Chapter[] = [
@@ -101,7 +101,7 @@ export const CHAPTERS: Chapter[] = [
   },
   {
     label: 'Analog',
-    visual: 'analog',
+    visual: 'bike',
     title: 'Off screen.',
     copy: 'Most likely on a road bike, climbing the Taunus. Long rides are where the best solutions arrive: steady output, no wasted watts, patience on the long climbs. On rainy days, a guitar or a game of chess.',
   },

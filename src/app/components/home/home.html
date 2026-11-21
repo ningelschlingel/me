@@ -1,6 +1,6 @@
 <!-- ME. ─ hero, intro, and the people behind the roles -->
 <app-tile tileTitle="ME." tileSubtitle="Jan" style="--i: 0" class="bg-paper text-ink"
-  [state]="state(0)" [share]="share(0)" [grow]="grow(0)" (activate)="open(0)" (dismiss)="close()" (step)="step(0, $event)" (hovered)="hover(0, $event)">
+  [state]="state(0)" [share]="share(0)" [grow]="grow(0)" [visit]="visits()[0]" (activate)="open(0)" (dismiss)="close()" (step)="step(0, $event)" (hovered)="hover(0, $event)">
   <app-pager>
     <section data-num="00">
       <app-hero />
@@ -38,6 +38,8 @@
           <app-charts />
         } @else if (c.visual === 'modules') {
           <app-modules />
+        } @else if (c.visual === 'bike') {
+          <app-bike />
         } @else {
           <app-sketch [kind]="c.visual" />
         }
@@ -54,7 +56,7 @@
 
 <!-- YOU. ─ what the visitor needs; every role links to its proof -->
 <app-tile tileTitle="YOU." tileSubtitle="What do you need?" style="--i: 1; --icon-filter: invert(1)"
-  class="bg-cobalt text-white" [state]="state(1)" [share]="share(1)" [grow]="grow(1)" (activate)="open(1)" (dismiss)="close()"
+  class="bg-cobalt text-white" [state]="state(1)" [share]="share(1)" [grow]="grow(1)" [visit]="visits()[1]" (activate)="open(1)" (dismiss)="close()"
   (step)="step(1, $event)" (hovered)="hover(1, $event)">
   <app-pager>
     <section class="page" data-num="00">
@@ -90,7 +92,7 @@
 
 <!-- INDEX. ─ selected work, filterable by role. Numbers are fixed: filtering never renumbers. -->
 <app-tile tileTitle="INDEX." tileSubtitle="Selected work" style="--i: 2; --icon-filter: invert(1)"
-  class="bg-night text-paper" [state]="state(2)" [share]="share(2)" [grow]="grow(2)" (activate)="open(2)" (dismiss)="close()"
+  class="bg-night text-paper" [state]="state(2)" [share]="share(2)" [grow]="grow(2)" [visit]="visits()[2]" (activate)="open(2)" (dismiss)="close()"
   (step)="step(2, $event)" (hovered)="hover(2, $event)">
   <!-- Phones: an active filter takes the subtitle's place in the header line; a tap clears it. -->
   @if (selected(); as role) {
@@ -186,7 +188,7 @@
 
 <!-- OURS. ─ working together. Contacts live in the menu; here only the two invitations. -->
 <app-tile tileTitle="OURS." tileSubtitle="Divide & conquer" style="--i: 3" class="bg-signal text-ink"
-  [state]="state(3)" [share]="share(3)" [grow]="grow(3)" (activate)="open(3)" (dismiss)="close()" (step)="step(3, $event)" (hovered)="hover(3, $event)">
+  [state]="state(3)" [share]="share(3)" [grow]="grow(3)" [visit]="visits()[3]" (activate)="open(3)" (dismiss)="close()" (step)="step(3, $event)" (hovered)="hover(3, $event)">
   <app-pager>
     <section class="page scene" data-num="01">
       <app-sketch kind="train" />
