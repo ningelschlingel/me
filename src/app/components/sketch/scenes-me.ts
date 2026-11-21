@@ -1,5 +1,5 @@
-import { Scene, Stroke, TAU, V3, add, easeInOut, rotX, rotY, rotZ, scale, span, wave } from './math';
-import { Skin, box, disc, face, lathe, pose, sleeve, triangulate } from './solids';
+import { Scene, Stroke, TAU, V3, add, rotX, rotY, rotZ, scale, wave } from './math';
+import { Skin, box, face, lathe, pose, triangulate } from './solids';
 
 /*
  * The ME column: one family of small, solid objects. Ink-shaded bodies on paper, lit from
@@ -11,15 +11,7 @@ import { Skin, box, disc, face, lathe, pose, sleeve, triangulate } from './solid
  */
 
 const PAPER: Skin = { tone: 'ink', lit: [0.07, 0.4] }; // light bodies (board, coin, ivory)
-const DARK: Skin = { tone: 'ink', lit: [0.55, 0.95], weight: 0.35 }; // chips, dark parts
-const METAL: Skin = { tone: 'ink', lit: [0.16, 0.55] };
 const ACCENT: Skin = { tone: 'accent', lit: [0.72, 1] };
-
-const ring = (c: V3, r: number, n = 16, plane: 'xy' | 'xz' = 'xy'): V3[] =>
-  Array.from({ length: n + 1 }, (_, i) => {
-    const a = (TAU * i) / n;
-    return add(c, plane === 'xy' ? [r * Math.cos(a), r * Math.sin(a), 0] : [r * Math.cos(a), 0, r * Math.sin(a)]);
-  });
 
 /** A heartbeat: lub-dub, then rest. x ∈ [0, 1) is one beat. */
 function beat(x: number) {
@@ -82,144 +74,6 @@ export const logic: Scene = (t) => {
         out.push(...star(add(corner, [0, 0, 0.06]), 0.14 * life, after * 3, life > 0.01 ? 1 : 0));
       }
   return out;
-};
-
-// ── 02 Metal · "Close to the hardware": a Raspberry Pi Pico, floating ───────────────────────
-
-const PICO: Stroke[] = (() => {
-  const W = 0.21, L = 0.51, T = 0.02; // half width (x), half length (z), half thickness (y)
-  const out: Stroke[] = [];
-  out.push(...box([-W, -T, -L], [W, T, L], PAPER)); // the board
-  out.push(...box([-0.075, T, -0.1], [0.075, T + 0.028, 0.05], DARK)); // RP2040
-  out.push(...box([0.02, T, 0.13], [0.11, T + 0.02, 0.21], DARK)); // flash
-  out.push(...box([-0.08, T, L - 0.11], [0.08, T + 0.055, L + 0.02], METAL)); // micro-USB
-  out.push(...box([-0.16, T, 0.16], [-0.07, T + 0.02, 0.27], METAL)); // BOOTSEL
-  out.push(...box([-0.135, T + 0.02, 0.19], [-0.095, T + 0.032, 0.24], PAPER));
-  // Castellated pins: twenty gold pads down each long edge
-  for (let i = 0; i < 20; i++) {
-    const z = -L + 0.035 + (i * (2 * L - 0.07)) / 19;
-    for (const s of [-1, 1])
-      out.push({ pts: [[s * W, T + 0.001, z], [s * (W - 0.035), T + 0.001, z]], tone: 'mango', weight: 1.3, normal: [0, 1, 0], lift: 0.06 });
-  }
-  // Debug pads at the far end, and the USB opening
-  for (const x of [-0.06, 0, 0.06]) out.push({ pts: ring([x, T + 0.001, -L + 0.035], 0.014, 8, 'xz'), tone: 'mango', weight: 1, normal: [0, 1, 0], lift: 0.06 });
-  out.push({ pts: [[-0.055, T + 0.012, L + 0.021], [0.055, T + 0.012, L + 0.021], [0.055, T + 0.042, L + 0.021], [-0.055, T + 0.042, L + 0.021], [-0.055, T + 0.012, L + 0.021]], weight: 0.7, normal: [0, 0, 1], lift: 0.06 });
-  return out;
-})();
-
-export const metal: Scene = (t) => {
-  // It hovers and turns over slowly, like something you hold up to look at.
-  const turn = (p: V3) => rotY(rotX(rotZ(p, 0.22 * wave(t, 2, 0.1)), 0.55 + 0.3 * wave(t, 1)), -0.5 + 0.7 * wave(t, 1, 0.25));
-  const out = pose(PICO, turn, [0, 0.05 * wave(t, 2), 0]);
-  // The LED blinks twice per loop.
-  const on = Math.max(0, Math.sin(TAU * 2 * t)) ** 4;
-  const led = box([0.1, 0.02, 0.3], [0.145, 0.034, 0.345], { tone: 'accent', lit: [0.35 + 0.65 * on, 0.35 + 0.65 * on] });
-  out.push(...pose(led, turn, [0, 0.05 * wave(t, 2), 0]));
-  return out;
-};
-
-// ── 03 Aesthetics · "Visual intuition": an interface, taken apart into its layers ───────────
-
-const SCREEN = { w: 0.34, h: 0.6 };
-const N: V3 = [0, 0, 1];
-
-/** Lines printed on a layer (z set by the caller). */
-const printed = (pts: [number, number][], z: number, s: Partial<Stroke> = {}): Stroke => ({
-  pts: pts.map(([x, y]) => [x, y, z] as V3),
-  normal: N,
-  lift: 0.05,
-  weight: 0.6,
-  ...s,
-});
-const rect = (x0: number, y0: number, x1: number, y1: number): [number, number][] => [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]];
-
-export const aesthetics: Scene = (t) => {
-  // The layers lift apart and settle back: wireframe, components, the finished surface.
-  const open = 0.5 - 0.5 * Math.cos(TAU * t);
-  const gap = 0.05 + 0.34 * easeInOut(open);
-  const z = [-gap, 0, gap];
-  const out: Stroke[] = [];
-
-  // 1 · Wireframe: a plate with a grid and crossed-out placeholders
-  out.push(...box([-SCREEN.w, -SCREEN.h, z[0] - 0.012], [SCREEN.w, SCREEN.h, z[0]], PAPER));
-  const w = z[0] + 0.001;
-  for (const x of [-0.17, 0, 0.17]) out.push(printed([[x, -SCREEN.h + 0.05], [x, SCREEN.h - 0.05]], w, { ink: 0.3, weight: 0.4 }));
-  for (const y of [-0.36, -0.12, 0.12, 0.36]) out.push(printed([[-SCREEN.w + 0.05, y], [SCREEN.w - 0.05, y]], w, { ink: 0.3, weight: 0.4 }));
-  out.push(printed(rect(-0.26, 0.12, 0.26, 0.5), w), printed([[-0.26, 0.12], [0.26, 0.5]], w), printed([[-0.26, 0.5], [0.26, 0.12]], w));
-  out.push(printed(rect(-0.26, -0.48, 0.0, -0.36), w));
-
-  // 2 · Components: the real blocks. The button gives a little when it is pressed.
-  const press = Math.max(0, Math.sin(Math.PI * span(t, 0.52, 0.6)));
-  out.push(...box([-0.26, 0.12, z[1]], [0.26, 0.5, z[1] + 0.035], ACCENT));
-  out.push(...box([-0.26, -0.03, z[1]], [0.12, 0.05, z[1] + 0.02], DARK));
-  out.push(...box([-0.26, -0.14, z[1]], [0.26, -0.1, z[1] + 0.012], METAL));
-  out.push(...box([-0.26, -0.23, z[1]], [0.16, -0.19, z[1] + 0.012], METAL));
-  out.push(...box([-0.26, -0.48, z[1]], [0.0, -0.36, z[1] + 0.04 - 0.025 * press], DARK));
-
-  // 3 · Surface: the device outline, and the pointer that comes down to click
-  const g = z[2];
-  const corner = 0.07;
-  const frame: [number, number][] = [];
-  for (const [cx, cy, q] of [[SCREEN.w - corner, SCREEN.h - corner, 0], [-SCREEN.w + corner, SCREEN.h - corner, 1], [-SCREEN.w + corner, -SCREEN.h + corner, 2], [SCREEN.w - corner, -SCREEN.h + corner, 3]])
-    for (let i = 0; i <= 5; i++) {
-      const a = (Math.PI / 2) * (q + i / 5);
-      frame.push([cx + corner * Math.cos(a), cy + corner * Math.sin(a)]);
-    }
-  frame.push(frame[0]);
-  out.push(printed(frame, g, { weight: 1.4, normal: undefined }));
-  out.push(printed([[-0.07, SCREEN.h - 0.05], [0.07, SCREEN.h - 0.05]], g, { weight: 1.6, normal: undefined }));
-  // The pointer travels to the button, clicks, and wanders back.
-  const go = easeInOut(span(t, 0.32, 0.52)) - easeInOut(span(t, 0.66, 0.9));
-  const px = 0.16 - 0.3 * go, py = 0.02 - 0.42 * go;
-  const tip: V3 = [px, py, g + 0.03 - 0.02 * press];
-  const arrow: V3[] = [[0, 0, 0], [0, -0.17, 0], [0.045, -0.125, 0], [0.085, -0.2, 0], [0.11, -0.185, 0], [0.072, -0.11, 0], [0.13, -0.11, 0]].map((p) => add(p as V3, tip));
-  out.push({ pts: [...arrow, arrow[0]], fill: 'accent', tone: 'ink', weight: 0.9, lift: 0.4 });
-  // A ring ripples out from the click.
-  const ripple = span(t, 0.56, 0.72);
-  out.push(printed(ring([px, py, 0], 0.03 + 0.12 * ripple, 14).map(([x, y]) => [x, y] as [number, number]), g, { tone: 'accent', ink: Math.sin(Math.PI * ripple), weight: 1, normal: undefined }));
-
-  // Leaning back like a phone on a stand, slowly looking left and right.
-  const turn = (p: V3) => rotY(rotX(p, -0.95), 0.45 * Math.sin(TAU * t));
-  return pose(out, turn);
-};
-
-// ── 04 Strategy · "The business interface": a coin. Heads: €. Tails: </>. ───────────────────
-
-const COIN = { r: 0.62, t: 0.05, n: 40 };
-const COIN_BODY: Stroke[] = (() => {
-  const front = disc([0, 0, COIN.t], COIN.r, [1, 0, 0], [0, 1, 0], COIN.n);
-  const back = disc([0, 0, -COIN.t], COIN.r, [1, 0, 0], [0, 1, 0], COIN.n);
-  // A dark, heavy coin: the symbols pop in orange, the milled edge catches the light.
-  const FACE: Skin = { tone: 'ink', lit: [0.62, 0.9], weight: 0.4 };
-  const out = sleeve(front, back, { tone: 'ink', lit: [0.2, 0.7], weight: 0.3, ink: 0.5 }, false);
-  out.push(face(front, [0, 0, 1], FACE), face(back, [0, 0, -1], FACE));
-  const mark = (pts: [number, number][], side: 1 | -1, s: Partial<Stroke> = {}): Stroke => ({
-    // The back is mirrored, so it reads the right way round when the coin has turned.
-    pts: pts.map(([x, y]) => [side * x, y, side * (COIN.t + 0.003)] as V3),
-    normal: [0, 0, side],
-    lift: 0.12,
-    tone: 'accent',
-    weight: 2.4,
-    ...s,
-  });
-  for (const side of [1, -1] as const)
-    out.push(mark(ring([0, 0, 0], 0.53, 40).map(([x, y]) => [x, y] as [number, number]), side, { tone: 'mango', weight: 1, ink: 0.8 }));
-  // Heads: the euro sign (an open arc and its two bars)
-  const arc: [number, number][] = Array.from({ length: 21 }, (_, i) => {
-    const a = (50 + (260 * i) / 20) * (Math.PI / 180);
-    return [0.05 + 0.25 * Math.cos(a), 0.25 * Math.sin(a)];
-  });
-  out.push(mark(arc, 1), mark([[-0.33, 0.07], [0.09, 0.07]], 1), mark([[-0.33, -0.07], [0.05, -0.07]], 1));
-  // Tails: </>
-  out.push(mark([[-0.14, 0.2], [-0.34, 0], [-0.14, -0.2]], -1), mark([[0.07, 0.27], [-0.07, -0.27]], -1), mark([[0.14, 0.2], [0.34, 0], [0.14, -0.2]], -1));
-  return out;
-})();
-
-export const strategy: Scene = (t) => {
-  // One full turn per loop, lingering on each face so you can read it.
-  const spin = TAU * t - 0.36 * Math.sin(2 * TAU * t);
-  const turn = (p: V3) => rotZ(rotX(rotY(p, spin), -0.12 + 0.06 * wave(t, 2)), 0.08 * wave(t, 1, 0.2));
-  return pose(COIN_BODY, turn, [0, 0.04 * wave(t, 2, 0.3), 0]);
 };
 
 // ── 05 Analog · "Off screen": a chess knight, carved ────────────────────────────────────────

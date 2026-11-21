@@ -78,14 +78,18 @@ export interface Chapter {
   copy: string;
   tags: string[];
   role?: RoleId;
-  /** The little 3D scene that lives on the page. */
-  sketch: SketchKind;
+  /** What lives on the page: a 3D line sketch (see sketch/registry.ts) or a flat 2D visual. */
+  visual: Visual;
 }
+
+/** Flat 2D visuals, each its own component (see Home's template). */
+export type FlatKind = 'inks' | 'pico' | 'charts';
+export type Visual = SketchKind | FlatKind;
 
 export const CHAPTERS: Chapter[] = [
   {
     label: 'Logic',
-    sketch: 'logic',
+    visual: 'logic',
     title: 'Systems that stay clean.',
     copy: 'Scalable backends with Spring Boot, fluid UIs with Angular Signals, and a clean bridge in between: vertical feature slices, explicit use cases and setups that start with a single command.',
     tags: ['Java', 'Spring Boot', 'PostgreSQL', 'Angular', 'Docker'],
@@ -93,7 +97,7 @@ export const CHAPTERS: Chapter[] = [
   },
   {
     label: 'Metal',
-    sketch: 'metal',
+    visual: 'pico',
     title: 'Close to the hardware.',
     copy: 'I love the moment code leaves the screen and does something in the room: radar sensors on a Raspberry Pi, microcontrollers driving LEDs, clocks that tell time in words.',
     tags: ['Python', 'C++', 'Raspberry Pi', 'Microcontrollers'],
@@ -101,7 +105,7 @@ export const CHAPTERS: Chapter[] = [
   },
   {
     label: 'Aesthetics',
-    sketch: 'aesthetics',
+    visual: 'inks',
     title: 'Visual intuition.',
     copy: 'I translate complex workflows into intentional UX. From a vector-perfect Illustrator asset to a Figma prototype, designed with technical constraints in mind and motion that feels physical.',
     tags: ['UI / UX', 'Figma', 'Illustrator', 'Print'],
@@ -109,14 +113,14 @@ export const CHAPTERS: Chapter[] = [
   },
   {
     label: 'Strategy',
-    sketch: 'strategy',
+    visual: 'charts',
     title: 'The business interface.',
     copy: 'Code exists to solve market problems. I am deepening my understanding of financial modeling and entrepreneurial leadership, so technical decisions line up with long-term ROI.',
     tags: ['Economics', 'Corporate Finance', 'MBA Candidate'],
   },
   {
     label: 'Analog',
-    sketch: 'analog',
+    visual: 'analog',
     title: 'Off screen.',
     copy: 'Most likely on a road bike, climbing the Taunus. Long rides are where the best solutions arrive: steady output, no wasted watts, patience on the long climbs. On rainy days, a guitar or a game of chess.',
     tags: ['Road cycling', 'Guitar', 'Chess'],
@@ -137,7 +141,7 @@ export interface Project {
 }
 
 /** Recommended: 1600×1000 (16:10), under 300 kB. Screenshots as .png, photos as .jpg. */
-const shot = (file: string) => `/projects/${file}`;
+const shot = (file: string) => `projects/${file}`;
 
 const gh = (repo: string) => `https://github.com/ningelschlingel/${repo}`;
 

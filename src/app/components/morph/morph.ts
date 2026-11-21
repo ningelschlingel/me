@@ -12,7 +12,7 @@ import {
 import { Persona } from '../../content';
 import { renderPortraits } from './portrait';
 
-const PHOTO = '/me.jpg';
+const PHOTO = 'me.jpg';
 const SLICES = 10;
 const BURST_COLORS = ['#fbbf24', '#4f46e5', '#ec4899', '#5eead4', '#1e40af', '#fafaf9'];
 

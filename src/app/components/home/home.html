@@ -30,7 +30,15 @@
 
     @for (c of chapters; track c.label; let i = $index) {
       <section class="page scene">
-        <app-sketch [kind]="c.sketch" />
+        @if (c.visual === 'inks') {
+          <app-inks />
+        } @else if (c.visual === 'pico') {
+          <app-pico />
+        } @else if (c.visual === 'charts') {
+          <app-charts />
+        } @else {
+          <app-sketch [kind]="c.visual" />
+        }
         <p class="page-label label"><span>0{{ i + 1 }}</span><span>{{ c.label }}</span></p>
         <h3 class="page-title">{{ c.title }}</h3>
         <div class="stage"></div>

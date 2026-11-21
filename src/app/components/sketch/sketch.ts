@@ -1,18 +1,14 @@
-import { Component, DestroyRef, ElementRef, afterNextRender, effect, inject, input, untracked, viewChild } from '@angular/core';
+import { Component, ElementRef, inject, input, viewChild } from '@angular/core';
 import { Viewport } from '../../layout';
-import { Tile } from '../tile/tile';
 import { Tone, V3, newell, rotX, rotY } from './math';
 import { SCENES, SketchKind } from './registry';
+import { live, stageRoom } from './live';
 import { CameraRig } from './rig';
-import { titleCeiling } from './stage';
+import { background, parse, titleCeiling } from './stage';
 
 const DISTANCE = 4.2;
 /** Depth levels: each gets one width and one colour mix. */
 const LEVELS = 10;
-/** With reduced motion, scenes keep living, just slowly and with a calmer camera. */
-const CALM_SPEED = 0.35;
-/** A tile's open/close transition (tile.css) plus a breath. */
-const SETTLE_MS = 780;
 
 type Layer = 'back' | 'front';
 
@@ -52,7 +48,6 @@ export class Sketch {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly rig = inject(CameraRig);
   private readonly screen = inject(Viewport);
-  private readonly tile = inject(Tile, { optional: true });
 
   private width = 0;
   private height = 0;
@@ -64,97 +59,23 @@ export class Sketch {
   private colors = {} as Record<Tone, string[]>;
   private wash = '';
 
-  private visible = false;
-  /** The tile is moving: layout is in flux, so the canvas rests (hidden) and is redone once it has landed. */
-  private settling = false;
-  private settleTimer?: ReturnType<typeof setTimeout>;
-  private restart = () => {};
-  private relayout = () => {};
+  private ctx!: Record<Layer, CanvasRenderingContext2D>;
   private elapsed = 0;
-  private last = 0;
-  private frame = 0;
 
   constructor() {
-    const destroyRef = inject(DestroyRef);
-
-    // A tile that opens or closes changes its pages' size for 0.7 s. Drawing into a canvas that
-    // is being resized every frame is wasted work (and would stretch), so the sketch rests until
-    // the tile has landed, then lays itself out once and fades in.
-    effect(() => {
-      const state = this.tile?.state();
-      untracked(() => {
-        if (state === undefined) return;
-        this.settling = true;
-        this.host.classList.add('settling');
-        clearTimeout(this.settleTimer);
-        this.settleTimer = setTimeout(() => {
-          this.settling = false;
-          this.relayout();
-          this.restart();
-          this.host.classList.remove('settling');
-        }, SETTLE_MS);
-      });
-    });
-
-    afterNextRender(() => {
-      if (typeof IntersectionObserver === 'undefined' || typeof ResizeObserver === 'undefined') return;
-      const back = this.backRef().nativeElement.getContext('2d');
-      const front = this.frontRef().nativeElement.getContext('2d');
-      if (!back || !front) return;
-      const ctx = { back, front };
-      const calm = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      /** Draw only what can be seen: in view, in an open tile, and not while the tile is still moving. */
-      const live = () => this.visible && !this.settling && (this.tile?.open() ?? true);
-      const loop = (now: number) => {
-        // Local clock that only runs while live; capped steps keep it smooth after stalls.
-        this.elapsed += Math.min(50, Math.max(0, now - this.last)) * (calm ? CALM_SPEED : 1);
-        this.last = now;
-        this.draw(ctx, now, calm);
-        this.frame = live() ? requestAnimationFrame(loop) : 0;
-      };
-      const start = () => {
-        if (this.frame || !live()) return;
-        this.last = performance.now();
-        this.frame = requestAnimationFrame(loop);
-      };
-      this.restart = start;
-
-      const ro = new ResizeObserver(() => {
-        if (this.settling) return; // redone when the tile has landed
-        this.resize();
-        this.draw(ctx, performance.now(), calm);
-      });
-      ro.observe(this.host);
-
-      const io = new IntersectionObserver(([entry]) => {
-        this.visible = entry.isIntersecting && !document.hidden;
-        start();
-      });
-      io.observe(this.host);
-      const onVisibility = () => {
-        if (document.hidden) this.visible = false;
-        else {
-          const rect = this.host.getBoundingClientRect();
-          this.visible = rect.width > 0 && rect.right > 0 && rect.left < innerWidth;
-          start();
-        }
-      };
-      document.addEventListener('visibilitychange', onVisibility);
-
-      this.relayout = () => {
-        this.resize();
-        this.draw(ctx, performance.now(), calm);
-        start();
-      };
-
-      destroyRef.onDestroy(() => {
-        clearTimeout(this.settleTimer);
-        cancelAnimationFrame(this.frame);
-        ro.disconnect();
-        io.disconnect();
-        document.removeEventListener('visibilitychange', onVisibility);
-      });
+    live(this.host, {
+      init: () => {
+        const back = this.backRef().nativeElement.getContext('2d');
+        const front = this.frontRef().nativeElement.getContext('2d');
+        if (!back || !front) return false;
+        this.ctx = { back, front };
+        return true;
+      },
+      resize: () => this.resize(),
+      draw: (now, elapsed, calm) => {
+        this.elapsed = elapsed;
+        this.draw(this.ctx, now, calm);
+      },
     });
   }
 
@@ -174,14 +95,8 @@ export class Sketch {
     // The model may reach beyond it, up to the title: the box it fills is bigger than the room
     // it takes in the layout. It may overlap the title by a third of a letter at most.
     const card = host.parentElement!;
-    const stage = card.querySelector<HTMLElement>(':scope > .stage');
     const desktop = this.screen.desktop();
-    const stageTop = stage ? stage.offsetTop : this.height * 0.3;
-    const ceiling = titleCeiling(card) ?? stageTop;
-    const reach = desktop ? 0.5 : 1; // phones use every bit of it
-    const top = Math.min(stageTop, stageTop - (stageTop - ceiling) * reach);
-    const bottom = stage ? stage.offsetTop + stage.offsetHeight - 4 : this.height * 0.75;
-    const room = bottom - top;
+    const { top, room } = stageRoom(card, this.height, desktop, titleCeiling(card));
 
     // Every scene has its own spot (left, centre, right) so the slides don't all look alike.
     // Phones keep every model on the right half, clear of the left-aligned type.
@@ -436,23 +351,4 @@ function extent(kind: SketchKind) {
     }
   extents.set(kind, box);
   return box;
-}
-
-/** First non-transparent background up the tree: the card's colour, for depth fading. */
-function background(el: HTMLElement | null): string {
-  for (; el; el = el.parentElement) {
-    const bg = getComputedStyle(el).backgroundColor;
-    if (bg && !/rgba?\(0, 0, 0, 0\)|transparent/.test(bg)) return bg;
-  }
-  return 'rgb(0,0,0)';
-}
-
-/** Any CSS colour → [r, g, b], via the canvas parser. */
-function parse(color: string): number[] {
-  const c = document.createElement('canvas').getContext('2d');
-  if (!c) return [255, 255, 255];
-  c.fillStyle = color;
-  const v = c.fillStyle as string;
-  if (v.startsWith('#')) return [1, 3, 5].map((i) => parseInt(v.slice(i, i + 2), 16));
-  return (v.match(/[\d.]+/g) ?? ['255', '255', '255']).slice(0, 3).map(Number);
 }

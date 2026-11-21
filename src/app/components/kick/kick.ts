@@ -1,11 +1,16 @@
 import { DestroyRef, Directive, ElementRef, afterNextRender, effect, inject, input, untracked } from '@angular/core';
 
-/** Quick, bouncy zoom: overshoot, settle. Short enough to feel like a wink, not a show. */
+/**
+ * Quick, bouncy zoom: overshoot, settle. Short enough to feel like a wink, not a show.
+ * Every keyframe after the first states its opacity: a keyframe without one would animate
+ * back to the element's own opacity, which is 0 while it waits to come in (it would appear,
+ * fade away again and pop back at the end).
+ */
 const KEYFRAMES: Keyframe[] = [
   { transform: 'scale(0.4) rotate(-6deg)', opacity: 0 },
   { transform: 'scale(1.14) rotate(2deg)', opacity: 1, offset: 0.55 },
-  { transform: 'scale(0.96) rotate(-1deg)', offset: 0.78 },
-  { transform: 'none' },
+  { transform: 'scale(0.96) rotate(-1deg)', opacity: 1, offset: 0.78 },
+  { transform: 'none', opacity: 1 },
 ];
 // The delay lets the question (or the page) arrive first; 'backwards' keeps it hidden until then.
 const TIMING: KeyframeAnimationOptions = { duration: 560, delay: 300, fill: 'backwards', easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' };

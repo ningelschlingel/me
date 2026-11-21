@@ -1,16 +1,20 @@
-import { Component, DestroyRef, ElementRef, afterNextRender, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, effect, inject, signal, untracked } from '@angular/core';
 import { Viewport } from '../../layout';
 import { CameraRig } from '../sketch/rig';
 import { titleCeiling } from '../sketch/stage';
 import { Tile } from '../tile/tile';
+import { Magnets } from './magnets';
 
 /**
- * "?!" as two polished, round 3D objects, ray-marched in a tiny fragment shader:
- * signed distance fields (a torus arc, capsules and spheres) blended smoothly,
- * lit with a soft key light, a rim and a glossy specular, in the palette's mango.
- * The background stays transparent, so the card shows through.
+ * "?!" as two polished, round 3D objects, ray-marched in a tiny fragment shader: signed
+ * distance fields (a torus arc, capsules and spheres) blended smoothly, lit with a soft key
+ * light, a rim and a glossy specular, in the palette's mango. Transparent around them.
  *
- * Seamless: every motion is a sine of the loop phase. Runs only while visible.
+ * The canvas covers the whole tile they live in (and the tile clips it), so the marks can
+ * drift in from outside it, across the title and the text, before they land in their spot.
+ * It hangs on the tile itself, outside the pages, so no page edge cuts them off; their spot
+ * is measured every frame, so they still travel with their page when it is swiped. Where
+ * they are comes from a little physics model (magnets.ts); the shader draws them there.
  */
 const VERT = `
 attribute vec2 p;
@@ -21,13 +25,17 @@ const FRAG = (steps: number) => `
 precision highp float;
 #define STEPS ${steps}
 uniform vec2 res;
-uniform float t;      // loop phase 0..1
+uniform vec3 rest;    // the marks' resting box: centre (px, from the bottom left) and px per unit
+uniform vec4 q;       // the question mark: x, y (units), turn about y, roll
+uniform vec4 b;       // the exclamation mark, likewise
+uniform float t;      // idle loop phase 0..1
 uniform vec2 lean;    // camera lean from the rig (yaw, pitch)
 uniform vec3 base;    // mango
 uniform vec3 bg;      // card colour, for the environment
 
 const float TAU = 6.28318530718;
-const float FOV = 1.22; // the marks just fill the shorter side of the canvas
+/** How far either mark reaches from its centre (units), and a margin for the lean. */
+const float REACH = 1.0;
 
 mat2 rot(float a) { float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
 
@@ -70,15 +78,15 @@ float bang(vec3 p) {
   return min(bar, dot_);
 }
 
-// Both marks, each bobbing and turning on its own, seamlessly.
+// Both marks where the physics put them, each with its own gentle idle bob and turn on top.
 float scene(vec3 p) {
-  vec3 q = p - vec3(-0.42, 0.04 * sin(TAU * t), 0.0);
-  q.xz *= rot(0.35 * sin(TAU * t));
-  q.xy *= rot(0.08 * sin(TAU * t + 1.0));
-  vec3 b = p - vec3(0.46, 0.04 * sin(TAU * t + 2.1), 0.0);
-  b.xz *= rot(0.35 * sin(TAU * t + 1.7));
-  b.xy *= rot(-0.12 + 0.08 * sin(TAU * t + 2.5));
-  return min(question(q), bang(b));
+  vec3 qq = p - vec3(q.xy + vec2(0.0, 0.04 * sin(TAU * t)), 0.0);
+  qq.xz *= rot(q.z + 0.35 * sin(TAU * t));
+  qq.xy *= rot(q.w + 0.08 * sin(TAU * t + 1.0));
+  vec3 bb = p - vec3(b.xy + vec2(0.0, 0.04 * sin(TAU * t + 2.1)), 0.0);
+  bb.xz *= rot(b.z + 0.35 * sin(TAU * t + 1.7));
+  bb.xy *= rot(b.w - 0.12 + 0.08 * sin(TAU * t + 2.5));
+  return min(question(qq), bang(bb));
 }
 
 vec3 normal(vec3 p) {
@@ -90,12 +98,16 @@ vec3 normal(vec3 p) {
 }
 
 void main() {
-  vec2 uv = (gl_FragCoord.xy - 0.5 * res) / min(res.x, res.y);
-  // Centred on the marks (they are not symmetric around the origin).
-  uv += vec2(-0.045, 0.035);
-  vec3 ro = vec3(0.0, 0.0, 3.2);
-  vec3 rd = normalize(vec3(uv * FOV, -2.2));
-  // camera lean: orbit the marks a little
+  // Orthographic: a pixel is a point in the marks' plane (units), seen straight on.
+  vec2 xy = (gl_FragCoord.xy - rest.xy) / rest.z + vec2(-0.08, 0.062);
+  float px = 1.0 / rest.z; // one pixel, in units
+  // Far from both marks: nothing to march (most of the tile, most of the time).
+  vec2 cq = q.xy + vec2(0.0, 0.09), cb = b.xy + vec2(0.0, 0.08);
+  if (min(length(xy - cq), length(xy - cb)) > REACH + 4.0 * px) { gl_FragColor = vec4(0.0); return; }
+
+  vec3 ro = vec3(xy, 3.0);
+  vec3 rd = vec3(0.0, 0.0, -1.0);
+  // camera lean: orbit the marks a little (about their resting middle)
   mat2 yaw = rot(-0.6 * lean.x), pitch = rot(-0.6 * lean.y);
   ro.xz *= yaw; rd.xz *= yaw;
   ro.yz *= pitch; rd.yz *= pitch;
@@ -109,8 +121,7 @@ void main() {
     d += h * 0.9;
   }
   bool hit = h < 0.0008;
-  float px = 1.6 * md * FOV / (2.2 * min(res.x, res.y)); // one pixel, in scene units
-  float alpha = hit ? 1.0 : 1.0 - smoothstep(0.0, px, mh);
+  float alpha = hit ? 1.0 : 1.0 - smoothstep(0.0, 1.6 * px, mh);
   if (alpha <= 0.001) { gl_FragColor = vec4(0.0); return; }
 
   vec3 p = ro + rd * (hit ? d : md);
@@ -135,52 +146,49 @@ void main() {
 }
 `;
 
+/** Units across the shorter side of the resting box: the marks just fill it. */
+const UNITS = 1.775;
+/** Out of sight for at least this long counts as gone: the next arrival flies in again. */
+const GONE_MS = 150;
+
 @Component({
   selector: 'app-marks',
-  template: `
-    <canvas #canvas [class.on]="ready()"></canvas>
-    @if (!ready()) { <span class="fallback">?!</span> }
-  `,
+  template: `@if (!ready()) { <span class="fallback">?!</span> }`,
   styleUrl: './marks.css',
   host: { 'aria-hidden': 'true' },
 })
 export class Marks {
-  private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly rig = inject(CameraRig);
   private readonly screen = inject(Viewport);
   private readonly tile = inject(Tile, { optional: true });
   readonly ready = signal(false);
-  private settling = false;
-  private settleTimer?: ReturnType<typeof setTimeout>;
-  private relayout = () => {};
-  private restart = () => {};
+  /** Re-checks whether the marks can be seen (the tile opened or closed). */
+  private check = () => {};
 
   constructor() {
     const destroyRef = inject(DestroyRef);
 
-    // While the tile moves, its layout changes every frame: rest, then lay out once and fade in.
+    // The tile opening or closing can show or hide the marks. Moving between open states
+    // (peek ↔ active) leaves them in view: they just carry on, nothing restarts.
     effect(() => {
-      const state = this.tile?.state();
-      untracked(() => {
-        if (state === undefined) return;
-        this.settling = true;
-        this.host.classList.add('settling');
-        clearTimeout(this.settleTimer);
-        this.settleTimer = setTimeout(() => {
-          this.settling = false;
-          this.relayout();
-          this.restart();
-          this.host.classList.remove('settling');
-        }, 780);
-      });
+      this.tile?.open();
+      untracked(() => this.check());
     });
 
     afterNextRender(() => {
       if (typeof IntersectionObserver === 'undefined' || typeof ResizeObserver === 'undefined') return;
-      const canvas = this.canvas().nativeElement;
-      const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: true });
+      // The layer: on the tile, above its content (below the tile's own button), never in the way.
+      const frameEl = this.host.closest<HTMLElement>('app-tile') ?? this.host.parentElement!;
+      const canvas = document.createElement('canvas');
+      canvas.setAttribute('aria-hidden', 'true');
+      Object.assign(canvas.style, {
+        position: 'absolute', left: '0', top: '0', zIndex: '1', pointerEvents: 'none',
+        opacity: '0', transition: 'opacity 0.6s',
+      });
+      const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: false });
       if (!gl) return;
+      frameEl.appendChild(canvas);
       const phone = !this.screen.fine;
       const program = link(gl, phone ? 52 : 72);
       if (!program) return;
@@ -192,72 +200,126 @@ export class Marks {
       gl.enableVertexAttribArray(loc);
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
       const u = (name: string) => gl.getUniformLocation(program, name);
-      const uRes = u('res'), uT = u('t'), uLean = u('lean'), uBase = u('base'), uBg = u('bg');
+      const uRes = u('res'), uRest = u('rest'), uQ = u('q'), uB = u('b'), uT = u('t'), uLean = u('lean');
 
       const style = getComputedStyle(document.documentElement);
-      gl.uniform3fv(uBase, rgb(style.getPropertyValue('--color-mango').trim() || '#ffa630'));
-      gl.uniform3fv(uBg, rgb(getComputedStyle(this.host.closest('app-tile') ?? this.host).backgroundColor));
+      gl.uniform3fv(u('base'), rgb(style.getPropertyValue('--color-mango').trim() || '#ffa630'));
+      gl.uniform3fv(u('bg'), rgb(getComputedStyle(frameEl).backgroundColor));
 
       const calm = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const magnets = new Magnets(calm);
       const PERIOD = 7000;
-      let elapsed = 0, last = 0, frame = 0, visible = false;
+      let elapsed = 0, last = 0, frame = 0, visible = false, shown = false, goneAt = -Infinity;
+      /** The tile in units, relative to the marks' resting middle: where "outside" begins. */
+      let bounds = { left: -3, right: 3, top: 3, bottom: -3 };
+      let dpr = 1, rest = { x: 0, y: 0, unit: 100 };
+      /** The tile's size (CSS px), which the canvas covers. */
+      let size = { w: 1, h: 1 };
+      const rem = parseFloat(style.fontSize) || 16;
 
+      /**
+       * Where they rest, in the tile: the marks' own box, reaching up to the title (a third of
+       * a letter into it at most, see titleCeiling), on desktop at most 26rem wide. Measured
+       * every frame: the page may be sliding.
+       */
+      const place = () => {
+        const f = frameEl.getBoundingClientRect();
+        const h = this.host.getBoundingClientRect();
+        const ceiling = titleCeiling(this.host.parentElement!);
+        const up = ceiling === null ? 0 : Math.max(0, this.host.offsetTop - ceiling);
+        const boxW = this.screen.desktop() ? Math.min(h.width, 26 * rem) : h.width;
+        const boxH = h.height + up;
+        rest = { x: h.left - f.left + boxW / 2, y: h.top - f.top - up + boxH / 2, unit: Math.min(boxW, boxH) / UNITS };
+        bounds = {
+          left: -rest.x / rest.unit,
+          right: (size.w - rest.x) / rest.unit,
+          top: rest.y / rest.unit,
+          bottom: -(size.h - rest.y) / rest.unit,
+        };
+      };
+
+      const clear = () => {
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+      };
       const draw = (now: number) => {
+        place();
         const lean = this.rig.offset(now, calm);
+        const { q, b } = magnets;
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.uniform2f(uRes, canvas.width, canvas.height);
+        gl.uniform3f(uRest, rest.x * dpr, (canvas.height / dpr - rest.y) * dpr, rest.unit * dpr);
+        gl.uniform4f(uQ, q.x, q.y, q.spin, q.roll);
+        gl.uniform4f(uB, b.x, b.y, b.spin, b.roll);
         gl.uniform1f(uT, (elapsed % PERIOD) / PERIOD);
         gl.uniform2f(uLean, lean.yaw, lean.pitch);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       };
-      // Only what can be seen: in view, in an open tile, not while the tile is moving.
-      const live = () => visible && !this.settling && (this.tile?.open() ?? true);
       const loop = (now: number) => {
-        elapsed += Math.min(50, Math.max(0, now - last)) * (calm ? 0.35 : 1);
+        const dt = Math.min(50, Math.max(0, now - last));
         last = now;
+        elapsed += dt * (calm ? 0.35 : 1);
+        magnets.step(dt / 1000);
         draw(now);
-        frame = live() ? requestAnimationFrame(loop) : 0;
+        frame = shown ? requestAnimationFrame(loop) : 0;
       };
-      const start = () => {
-        if (frame || !live()) return;
-        last = performance.now();
-        frame = requestAnimationFrame(loop);
+
+      // In sight = in view and in an open tile. Out of sight long enough = gone: the next
+      // arrival flies in again. Only then; a tile resizing around them changes nothing.
+      this.check = () => {
+        const now = performance.now();
+        const next = visible && (this.tile?.open() ?? true) && !document.hidden;
+        if (next === shown) return;
+        shown = next;
+        if (!next) {
+          goneAt = now;
+          // Out of sight: leave nothing behind on the tile.
+          cancelAnimationFrame(frame);
+          frame = 0;
+          clear();
+          return;
+        }
+        if (now - goneAt > GONE_MS) {
+          place();
+          magnets.arrive(bounds);
+        }
+        if (!frame) {
+          last = now;
+          frame = requestAnimationFrame(loop);
+        }
       };
-      this.restart = start;
 
       const layout = () => {
-        // The canvas is bigger than the box the marks take in the layout: it reaches up to the
-        // title, overlapping it by a third of a letter at most (see titleCeiling).
-        const card = this.host.parentElement!;
-        const ceiling = titleCeiling(card);
-        const up = ceiling === null ? 0 : Math.max(0, this.host.offsetTop - ceiling);
-        canvas.style.top = `${-up}px`;
-        canvas.style.height = `${this.host.offsetHeight + up}px`;
-        // Ray marching is per pixel: a pixel budget keeps phones smooth however big the canvas gets.
-        const w = canvas.clientWidth, h = this.host.offsetHeight + up;
-        const budget = phone ? 260_000 : 700_000;
-        const dpr = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(budget / Math.max(1, w * h)));
-        canvas.width = Math.max(1, Math.round(w * dpr));
-        canvas.height = Math.max(1, Math.round(h * dpr));
-        draw(performance.now());
+        size = { w: frameEl.clientWidth, h: frameEl.clientHeight };
+        canvas.style.width = `${size.w}px`;
+        canvas.style.height = `${size.h}px`;
+        // Ray marching is per pixel, but only near the marks: a generous budget stays smooth.
+        const budget = phone ? 900_000 : 2_200_000;
+        dpr = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(budget / Math.max(1, size.w * size.h)));
+        canvas.width = Math.max(1, Math.round(size.w * dpr));
+        canvas.height = Math.max(1, Math.round(size.h * dpr));
+        if (shown) draw(performance.now());
+        else clear();
       };
-      this.relayout = layout;
-      const ro = new ResizeObserver(() => {
-        if (!this.settling) layout();
-      });
-      ro.observe(this.host);
+      const ro = new ResizeObserver(layout);
+      ro.observe(frameEl);
       const io = new IntersectionObserver(([e]) => {
-        visible = e.isIntersecting && !document.hidden;
-        start();
+        visible = e.isIntersecting;
+        this.check();
       });
       io.observe(this.host);
+      const onVisibility = () => this.check();
+      document.addEventListener('visibilitychange', onVisibility);
       this.ready.set(true);
+      canvas.style.opacity = '1';
 
       destroyRef.onDestroy(() => {
-        clearTimeout(this.settleTimer);
         cancelAnimationFrame(frame);
+        canvas.remove();
         ro.disconnect();
         io.disconnect();
+        document.removeEventListener('visibilitychange', onVisibility);
       });
     });
   }

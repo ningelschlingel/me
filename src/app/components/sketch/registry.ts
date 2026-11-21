@@ -1,6 +1,6 @@
 import { Scene, TAU } from './math';
 import { architect, designer, embedded } from './scenes';
-import { aesthetics, analog, heart, logic, metal, strategy } from './scenes-me';
+import { analog, heart, logic } from './scenes-me';
 import { camera, ride, train } from './scenes-ours';
 
 /**
@@ -11,7 +11,7 @@ import { camera, ride, train } from './scenes-ours';
  */
 export type SketchKind =
   | 'architect' | 'embedded' | 'designer'
-  | 'heart' | 'logic' | 'metal' | 'aesthetics' | 'strategy' | 'analog'
+  | 'heart' | 'logic' | 'analog'
   | 'train' | 'ride';
 
 interface Entry {
@@ -46,10 +46,6 @@ export const SCENES: Record<SketchKind, Entry> = {
   // Each ME object has its own spot and its own angle, so the slides don't repeat each other.
   heart: { scene: heart, period: 9600, yaw: 0.28, pitch: 0.3, place: { x: 0.1 } },
   logic: { scene: logic, period: 12000, ...ME, place: { x: 0.85, size: 0.82 } },
-  metal: { scene: metal, period: 9000, yaw: 0.35, pitch: 0.3, place: { x: -0.55 } },
-  aesthetics: { scene: aesthetics, period: 10000, yaw: 0.5, pitch: 0.3, place: { x: 0.45 } },
-  // Nearly head-on, so both faces of the coin can be read.
-  strategy: { scene: strategy, period: 7000, yaw: 0.15, pitch: 0.18, place: { x: 0.8, size: 0.8 } },
   analog: { scene: analog, period: 9000, yaw: 0.3, pitch: 0.22, place: { x: -0.35 } },
 
   // Low, along the track: the train comes at you, the camera swings round and watches it go.

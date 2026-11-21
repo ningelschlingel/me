@@ -3,6 +3,9 @@ import { CHAPTERS, LINKEDIN, MAIL, PROJECTS, Project, ROLES, RoleId, STRAVA, rol
 import { CARDS, Columns, DECK_GROW, Viewport, WIDE, tileGrow } from '../../layout';
 import { RoleState } from '../../role-state';
 import { Hero } from '../hero/hero';
+import { Charts } from '../charts/charts';
+import { Inks } from '../inks/inks';
+import { Pico } from '../pico/pico';
 import { Pager } from '../pager/pager';
 import { Kick } from '../kick/kick';
 import { Marks } from '../marks/marks';
@@ -22,7 +25,7 @@ const COLUMNS: Columns[] = TILES.map((id) => (id === 'index' ? CARDS : WIDE));
 
 @Component({
   selector: 'app-home',
-  imports: [Tile, Pager, Hero, Kick, Sketch, Marks, Tags],
+  imports: [Tile, Pager, Hero, Kick, Sketch, Inks, Pico, Charts, Marks, Tags],
   templateUrl: './home.html',
   styleUrl: './home.css',
   host: {
