@@ -5,7 +5,7 @@
   container-type: inline-size;
   display: block;
   height: 100%;
-  transition: filter 0.35s, opacity 0.35s;
+  transition: filter calc(0.35s * var(--tempo)), opacity calc(0.35s * var(--tempo));
   /* Phones: the tile is always full width, so this is constant. Desktop: see below. */
   --portrait: min(84cqi, 46dvh, 24rem);
   --claim: clamp(1.75rem, 11cqi, 3rem);

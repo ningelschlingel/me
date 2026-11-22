@@ -2,7 +2,7 @@ import { Component, ElementRef, inject, viewChild } from '@angular/core';
 import { Viewport } from '../../layout';
 import { live, stageRoom } from '../sketch/live';
 import { background, parse, titleCeiling } from '../sketch/stage';
-import { ChartsPainter } from './painter';
+import { ChartsPainter, ChartsPen } from './painter';
 
 /** Two stock charts, running forever behind the card's text (see painter.ts). */
 @Component({
@@ -24,6 +24,7 @@ export class Charts {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly screen = inject(Viewport);
   private painter?: ChartsPainter;
+  private pen?: ChartsPen;
 
   constructor() {
     live(this.host, {
@@ -39,16 +40,17 @@ export class Charts {
         const width = this.host.clientWidth;
         const height = this.host.clientHeight;
         const card = this.host.parentElement!;
-        const root = getComputedStyle(document.documentElement);
+        // The card's colours never change: read once.
+        this.pen ??= {
+          ink: parse(getComputedStyle(this.host).color).join(', '),
+          paper: parse(background(card)).join(', '),
+          font: getComputedStyle(document.documentElement).getPropertyValue('--mono').trim() || 'ui-monospace, monospace',
+        };
         this.painter?.resize(
           width,
           height,
           stageRoom(card, height, this.screen.desktop(), titleCeiling(card)),
-          {
-            ink: parse(getComputedStyle(this.host).color).join(', '),
-            paper: parse(background(card)).join(', '),
-            font: root.getPropertyValue('--mono').trim() || 'ui-monospace, monospace',
-          },
+          this.pen,
           Math.min(2, window.devicePixelRatio || 1),
         );
       },

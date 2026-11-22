@@ -33,11 +33,23 @@
 }
 
 :root {
+  /* The app's tempo: every UI transition (tiles, menu, pager, hovers) lasts its base duration
+     times this, and so do the timers in JS that wait for them (tempo.ts reads it from here).
+     1 = the original timing, smaller = snappier. Content animations (sketches, the morph, the
+     marks' flight) keep their own pace. */
+  --tempo: 0.75;
   --ease-snap: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-pop: cubic-bezier(0.68, -0.6, 0.32, 1.6);
   --mono: var(--font-mono);
   /* How square the letters are cut. Set per element; the axis setting reads it. */
   --sharp: 100;
+}
+
+/* A tile's body height for pinning (tile.ts), written while the tile moves. Not inherited, so
+   writing it restyles the body alone, not all the pages inside. */
+@property --body-h {
+  syntax: '*';
+  inherits: false;
 }
 
 html {
@@ -159,11 +171,11 @@ body {
   .btn {
     @apply inline-flex cursor-pointer items-center gap-3 border-2 border-current px-5 py-3 text-xs font-bold tracking-[0.16em] uppercase;
     box-shadow: 4px 4px 0 currentColor;
-    transition: translate 0.3s var(--ease-pop), box-shadow 0.3s var(--ease-pop);
+    transition: translate calc(0.3s * var(--tempo)) var(--ease-pop), box-shadow calc(0.3s * var(--tempo)) var(--ease-pop);
   }
   .btn::after {
     content: '→';
-    transition: translate 0.3s var(--ease-pop);
+    transition: translate calc(0.3s * var(--tempo)) var(--ease-pop);
   }
   .btn:hover {
     translate: -2px -2px;
@@ -179,7 +191,7 @@ body {
 }
 
 /* Reduced motion: calm, not frozen. Layout still glides and things fade; nothing flies in,
-   flips or bounces. (Components drop their own big moves: morph twist, kick, swipe hint.) */
+   flips or bounces. (Components drop their own big moves: morph twist, kick.) */
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,

@@ -2,7 +2,7 @@ import { Component, ElementRef, inject, input, viewChild } from '@angular/core';
 import { Viewport } from '../../layout';
 import { live, stageRoom } from '../sketch/live';
 import { CameraRig } from '../sketch/rig';
-import { background, parse, titleCeiling } from '../sketch/stage';
+import { background, fit, parse, titleCeiling } from '../sketch/stage';
 import { Pen, Plan, drawConstruction } from './construction';
 
 const TAU = Math.PI * 2;
@@ -178,18 +178,20 @@ export class Inks {
     // softly, which reads as film grain rather than digital noise, and costs far less.
     this.scale = Math.min(1.25, window.devicePixelRatio || 1);
     const box = Math.ceil(2 * REACH * this.r);
+    // Kept while the card changes size (see fit): a bigger square only leaves more clear room
+    // to the right and below, the discs are placed from its corner.
     const canvas = this.canvasRef().nativeElement;
-    canvas.width = canvas.height = Math.max(1, Math.round(box * this.scale));
+    fit(canvas, box, box, this.scale, false);
     this.ox = Math.round(cx - box / 2);
     this.oy = Math.round(cy - box / 2);
-    Object.assign(canvas.style, { width: `${box}px`, height: `${box}px`, transform: `translate(${this.ox}px, ${this.oy}px)` });
+    canvas.style.transform = `translate(${this.ox}px, ${this.oy}px)`;
 
     // Hairlines must be crisp: the line canvas covers the card at full density.
     this.dpr = Math.min(2, window.devicePixelRatio || 1);
-    const lines = this.linesRef().nativeElement;
-    lines.width = Math.round(width * this.dpr);
-    lines.height = Math.round(height * this.dpr);
+    fit(this.linesRef().nativeElement, width, height, this.dpr);
 
+    // The card's colours never change: read once.
+    if (this.pen) return;
     const paper = parse(background(card));
     this.gl?.uniform3fv(this.u.paper, paper.map((v) => v / 255));
     const root = getComputedStyle(document.documentElement);

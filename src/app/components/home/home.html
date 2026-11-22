@@ -147,8 +147,12 @@
         <p class="page-label label"><span>{{ num(p) }}</span><span>{{ roleLabels(p) }}</span></p>
         <h3 class="page-title">{{ p.title }}</h3>
         <figure class="shot">
+          <!-- Each screen gets the size it needs (scripts/optimize-images.sh). Loaded and decoded
+               ahead, small as they are, so a project's picture is there the moment you swipe to it. -->
           <div class="frame">
-            <img [src]="p.image" alt="" loading="lazy" (error)="$any($event.target).hidden = true" />
+            @let s = shots.get(p)!;
+            <img [attr.sizes]="shotSizes" [attr.srcset]="s.srcset" [src]="s.src" alt="" fetchpriority="low"
+              (load)="ready($event)" (error)="$any($event.target).hidden = true" />
           </div>
           <!-- The tags: a quiet caption under the picture, like the line under a plate in a book.
                Phones lead with the roles (desktop has them in the label row). -->

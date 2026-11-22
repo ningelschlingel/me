@@ -12,6 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { Viewport } from '../../layout';
+import { ms } from '../../tempo';
 import { canScroll } from '../../scroll';
 import { INTERACTIVE, Tile } from '../tile/tile';
 
@@ -67,7 +68,6 @@ export class Pager {
   private wheel = new WheelState();
   private suppressClick = 0;
   private leaning: -1 | 0 | 1 = 0;
-  private nudgeTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
     const destroyRef = inject(DestroyRef);
@@ -107,7 +107,6 @@ export class Pager {
         vp.removeEventListener('click', swallow, true);
         for (const type of ['touchstart', 'touchmove', 'touchend', 'touchcancel'] as const) vp.removeEventListener(type, touch);
         cancelAnimationFrame(this.frame);
-        clearTimeout(this.nudgeTimer);
       });
     });
 
@@ -121,30 +120,19 @@ export class Pager {
       });
     });
 
-    // Once per visit (phones): if nobody has paged yet, the first open pager nudges to say "swipe me".
-    effect(() => {
-      const open = this.tile ? this.tile.state() === 'active' : true;
-      const pages = this.stops().length;
-      untracked(() => {
-        clearTimeout(this.nudgeTimer);
-        if (open && pages > 1 && !nudged) this.nudgeTimer = setTimeout(() => this.nudge(), NUDGE_AFTER_MS);
-      });
-    });
-
     // Desktop: a tile that closes forgets where it was. Phones keep the page: a tap anywhere
     // closes a tile there, so one by accident must cost nothing; opening it again lands on the
     // same page. (A new filter still starts over, see the MutationObserver.)
     const closed = () => ['rest', 'hidden'].includes(this.tile?.state() ?? '');
     effect(() => {
       if (closed() && untracked(() => this.screen.desktop()))
-        untracked(() => setTimeout(() => closed() && this.reset(), 700));
+        untracked(() => setTimeout(() => closed() && this.reset(), ms(700)));
     });
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
   go(i: number, velocity = this.v) {
-    interacted();
     const stops = this.stops();
     const index = clamp(i, 0, stops.length - 1);
     this.index.set(index);
@@ -260,7 +248,6 @@ export class Pager {
       g.x0 = cx; // no jump from the dead zone
       g.from = this.x;
       this.dragging.set(true);
-      interacted();
       getSelection?.()?.removeAllRanges();
       cancelAnimationFrame(this.frame);
       this.frame = 0;
@@ -292,17 +279,6 @@ export class Pager {
   }
 
   /**
-   * The once-per-visit hint, phones only: the pages get a small push towards the next one and
-   * spring back, as if someone had flicked them. The dial and the progress rule in the header
-   * move along, so one gesture teaches all three. Reduced motion: no push.
-   */
-  private nudge() {
-    if (nudged || this.gesture || this.index() !== 0 || this.screen.desktop() || reducedMotion()) return;
-    nudged = true;
-    this.settle(this.target, NUDGE_VELOCITY);
-  }
-
-  /**
    * Trackpads: follow sideways swipes 1:1, then commit to the next page once the swipe means
    * it and let the momentum tail run out silently. Mouse wheels (vertical): flip a page once
    * the page itself has nothing left to scroll.
@@ -329,7 +305,6 @@ export class Pager {
     }
 
     event.preventDefault();
-    interacted();
     if (fresh) w.begin(now, 'x', this.x, this.index()); // a new swipe inside the momentum tail
     if (w.spent) return; // committed: let the tail run out
 
@@ -404,11 +379,12 @@ export class Pager {
     const start = performance.now();
     this.following = true;
     this.x = this.target;
+    this.painted = '';
     this.trackRef().nativeElement.style.transform =
       `translate3d(clamp(${-from}px, calc(100% - ${end}px), ${-this.target}px), 0, 0)`;
     this.tile?.setProgress(this.progress(this.target), this.stops().length);
     const tick = (now: number) => {
-      if (vp.clientWidth < this.view - 1 && now - start < FOLLOW_MS) {
+      if (vp.clientWidth < this.view - 1 && now - start < ms(FOLLOW_MS)) {
         this.frame = requestAnimationFrame(tick);
         return;
       }
@@ -443,9 +419,13 @@ export class Pager {
   };
 
   private paint() {
-    this.trackRef().nativeElement.style.transform = `translate3d(${-this.x}px, 0, 0)`;
+    // measure() paints on every resize, also while nothing moves: write only what changed.
+    const transform = `translate3d(${-this.x}px, 0, 0)`;
+    if (transform !== this.painted) this.trackRef().nativeElement.style.transform = this.painted = transform;
     this.tile?.setProgress(this.progress(this.x), this.stops().length);
   }
+  /** The track's transform as last written by paint() ('' after anything else wrote it). */
+  private painted = '';
 
   /** Offset → continuous page index (2.5 = halfway between the third and the fourth stop). */
   private progress(x: number) {
@@ -526,7 +506,7 @@ export class Pager {
         track.style.setProperty('--col', px);
         this.view = width;
         // Only content that really re-flows while visible fades; a revealed column just appears.
-        if (animate && resized && document.documentElement.dataset['ready'] !== undefined) track.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 450, easing: 'ease-out' });
+        if (animate && resized && document.documentElement.dataset['ready'] !== undefined) track.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: ms(450), easing: 'ease-out' });
       }
     }
     this.measure();
@@ -540,7 +520,9 @@ export class Pager {
       if (stop - stops[stops.length - 1] > 2) stops.push(stop);
     }
     for (const page of this.pages()) page.classList.toggle('can-scroll', page.scrollHeight - page.clientHeight > 2);
-    this.stops.set(stops);
+    // This runs every frame while a tile moves; unchanged stops must not re-render the dots.
+    const before = this.stops();
+    if (stops.length !== before.length || stops.some((s, i) => s !== before[i])) this.stops.set(stops);
     // The dial's faces: each stop's page number (its data-num), or its position.
     if (this.tile) {
       const pages = this.pages();
@@ -630,14 +612,7 @@ class WheelState {
   }
 }
 
-/** The swipe hint runs once per visit, and never after the visitor has paged by themselves. */
-let nudged = false;
-const interacted = () => (nudged = true);
-const NUDGE_AFTER_MS = 1400;
-/** px/s: the spring carries the pages about 1.5rem before it brings them back. */
-const NUDGE_VELOCITY = 650;
-
-/** Longest a track follows a growing tile's edge (the tile's own move is 0.7 s), ms. */
+/** Longest a track follows a growing tile's edge (the tile's own move is 0.7 s), ms at tempo 1. */
 const FOLLOW_MS = 1100;
 
 /** Pages whose width changes by no more than this (px) have not re-flowed: no fade. */

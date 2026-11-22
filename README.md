@@ -1,59 +1,52 @@
 # Ningelschlingel
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.5.
+My personal site: https://ningelschlingel.github.io/me/
 
-## Development server
+## Approach
 
-To start a local development server, run:
+- **A short overview, not a CV.** Four tiles (ME, YOU, INDEX, OURS) and a few pages each, with as little text as needed. All copy lives in [src/app/content.ts](src/app/content.ts).
+- **Navigation is the fun part.** The page never scrolls: tiles open and close, and you swipe through each tile's pages. Most pages have a small sketch or animation that is already in place when you get there and plays once you arrive.
+- **Robust on laptops and phones.** Tiles are columns on wide screens and rows on phones. Visuals that are off screen do no work, and images come in the size each screen needs.
 
-```bash
-ng serve
-```
+Built with Angular 21 (signals, standalone components), Tailwind 4 and plain Canvas 2D and WebGL.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Development
 
 ```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
+npm install
+ng serve   # http://localhost:4200/
 ng test
 ```
 
-## Running end-to-end tests
+### Animation speed
 
-For end-to-end (e2e) testing, run:
+`--tempo` in [src/styles.css](src/styles.css) sets the speed of every UI transition (tiles, menu, pager, hovers). 1 is the original timing; smaller is faster.
+
+### Project images
+
+Title images go in `public/projects/`. After adding or replacing one, run:
 
 ```bash
-ng e2e
+scripts/optimize-images.sh
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+This exports JPEGs at 800, 1200 and 1600 px wide to `public/projects/sized/` and regenerates `src/app/shots.ts`. Commit both. The script needs macOS, because it uses `sips`.
 
-## Additional Resources
+## Deploy (GitHub Pages)
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```bash
+npm run deploy
+```
+
+This builds and publishes in one go. The two steps it runs:
+
+```bash
+ng build --configuration production --base-href=/me/
+npx angular-cli-ghpages --dir=dist/ningelschlingel/browser
+```
+
+The second step pushes the build output to the `gh-pages` branch over SSH. If the push fails with an access error, run `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` and try again.
+
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md).

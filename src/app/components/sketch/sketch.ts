@@ -4,7 +4,7 @@ import { Tone, V3, newell, rotX, rotY } from './math';
 import { SCENES, SketchKind } from './registry';
 import { live, stageRoom } from './live';
 import { CameraRig } from './rig';
-import { background, parse, titleCeiling } from './stage';
+import { background, fit, parse, titleCeiling } from './stage';
 
 const DISTANCE = 4.2;
 /** Depth levels: each gets one width and one colour mix. */
@@ -86,10 +86,7 @@ export class Sketch {
     this.height = host.clientHeight;
     // Lines stay crisp at 1.5×; phones save a lot of pixels to clear and composite every frame.
     this.dpr = Math.min(this.screen.fine ? 2 : 1.5, window.devicePixelRatio || 1);
-    for (const c of [this.backRef().nativeElement, this.frontRef().nativeElement]) {
-      c.width = Math.round(this.width * this.dpr);
-      c.height = Math.round(this.height * this.dpr);
-    }
+    for (const c of [this.backRef().nativeElement, this.frontRef().nativeElement]) fit(c, this.width, this.height, this.dpr);
 
     // The stage: a real element in the card that holds the free space (see .stage in styles.css).
     // The model may reach beyond it, up to the title: the box it fills is bigger than the room
@@ -115,6 +112,8 @@ export class Sketch {
     // A touch below the middle of its space: the title above gets air, the text below less.
     this.cy = top + room * (desktop ? 0.5 : 0.54) - ((box.minY + box.maxY) / 2) * this.unit;
 
+    // The card's colours never change: read once.
+    if (this.wash) return;
     const style = getComputedStyle(host);
     const root = getComputedStyle(document.documentElement);
     const token = (name: string, fallback: string) => parse(root.getPropertyValue(name).trim() || fallback);
@@ -134,8 +133,10 @@ export class Sketch {
   private draw(ctx: Record<Layer, CanvasRenderingContext2D>, now: number, calm: boolean) {
     if (!this.width || !this.height) return;
     for (const c of Object.values(ctx)) {
+      // The whole canvas: it may reach past the card (see fit), and a card may grow into that.
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.clearRect(0, 0, c.canvas.width, c.canvas.height);
       c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-      c.clearRect(0, 0, this.width, this.height);
     }
     if (!this.unit) return;
 

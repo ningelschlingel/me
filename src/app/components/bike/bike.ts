@@ -3,7 +3,7 @@ import { Viewport } from '../../layout';
 import { smooth } from '../drafting/drafting';
 import { live, stageRoom } from '../sketch/live';
 import { CameraRig } from '../sketch/rig';
-import { background, parse, titleCeiling } from '../sketch/stage';
+import { background, fit, parse, titleCeiling } from '../sketch/stage';
 import { BB, EXTENT, Pen, drawBike } from './drawing';
 
 const TAU = Math.PI * 2;
@@ -91,9 +91,7 @@ export class Bike {
     const width = this.host.clientWidth;
     const height = this.host.clientHeight;
     this.dpr = Math.min(2, window.devicePixelRatio || 1);
-    const canvas = this.canvasRef().nativeElement;
-    canvas.width = Math.round(width * this.dpr);
-    canvas.height = Math.round(height * this.dpr);
+    fit(this.canvasRef().nativeElement, width, height, this.dpr);
 
     // The same stage as every sketch; the drawing's extent fits into it, plus some px for text.
     const card = this.host.parentElement!;
@@ -112,6 +110,8 @@ export class Bike {
     this.x = mid - ((EXTENT.x0 + EXTENT.x1) / 2 - BB[0]) * this.k;
     this.y = top + room / 2 - ((EXTENT.y0 + EXTENT.y1) / 2 - BB[1]) * this.k;
 
+    // The card's colours never change: read once.
+    if (this.pen) return;
     const root = getComputedStyle(document.documentElement);
     const token = (name: string, fallback: string) => parse(root.getPropertyValue(name).trim() || fallback).join(', ');
     this.pen = {

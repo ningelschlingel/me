@@ -1,8 +1,9 @@
 import { Component, ElementRef, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { CHAPTERS, LINKEDIN, MAIL, PROJECTS, Project, ROLES, RoleId, STRAVA, roleById } from '../../content';
+import { CHAPTERS, LINKEDIN, MAIL, PROJECTS, Project, ROLES, RoleId, STRAVA, roleById, sized } from '../../content';
 import { DECK_GROW, Viewport, tileGrow } from '../../layout';
 import { RoleState } from '../../role-state';
+import { ms } from '../../tempo';
 import { Hero } from '../hero/hero';
 import { Bike } from '../bike/bike';
 import { Charts } from '../charts/charts';
@@ -18,7 +19,7 @@ import { Tile, TileState } from '../tile/tile';
 /** Tile order; the id doubles as the URL hash for deep links (/#index). */
 const TILES = ['me', 'you', 'index', 'ours'] as const;
 const FEATURED = 0;
-/** Hover intent: a cursor passing through a column doesn't resize the deck. */
+/** Hover intent: a cursor passing through a column doesn't resize the deck. At tempo 1, ms. */
 const HOVER_IN_MS = 90;
 const HOVER_OUT_MS = 220;
 const INDEX = TILES.indexOf('index');
@@ -211,7 +212,7 @@ export class Home {
     clearTimeout(this.hoverTimer);
     this.hoverTimer = setTimeout(
       () => this.hovered.update((h) => (on ? i : h === i ? null : h)),
-      on ? HOVER_IN_MS : HOVER_OUT_MS,
+      ms(on ? HOVER_IN_MS : HOVER_OUT_MS),
     );
   }
 
@@ -240,6 +241,16 @@ export class Home {
 
   pad(n: number) {
     return String(n).padStart(2, '0');
+  }
+
+  /** Each project's exported image sizes, worked out once. */
+  readonly shots = new Map(PROJECTS.map((p) => [p, sized(p.image)]));
+  /** How wide a project image shows: the page's width on phones, a column (at most half) on desktop. */
+  readonly shotSizes = '(min-width: 64rem) 50vw, 100vw';
+
+  /** A loaded image is decoded right away, off screen, so swiping to it never waits for that. */
+  ready(event: Event) {
+    (event.target as HTMLImageElement).decode?.().catch(() => {});
   }
 
 }

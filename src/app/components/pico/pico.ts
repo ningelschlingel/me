@@ -2,7 +2,7 @@ import { Component, ElementRef, inject, input, viewChild } from '@angular/core';
 import { Viewport } from '../../layout';
 import { live, stageRoom } from '../sketch/live';
 import { CameraRig } from '../sketch/rig';
-import { background, parse, titleCeiling } from '../sketch/stage';
+import { background, fit, parse, titleCeiling } from '../sketch/stage';
 import { BOARD, EXTENT, Pen, drawPico, smooth } from './drawing';
 
 const TAU = Math.PI * 2;
@@ -98,9 +98,7 @@ export class Pico {
     const width = this.host.clientWidth;
     const height = this.host.clientHeight;
     this.dpr = Math.min(2, window.devicePixelRatio || 1);
-    const canvas = this.canvasRef().nativeElement;
-    canvas.width = Math.round(width * this.dpr);
-    canvas.height = Math.round(height * this.dpr);
+    fit(this.canvasRef().nativeElement, width, height, this.dpr);
 
     // The same stage as every sketch. Fit what the drawing may cover (its extent, turned
     // with the sheet) into it, plus some px for the notes' text.
@@ -129,6 +127,8 @@ export class Pico {
     this.cx = mid - ((box.x0 + box.x1) / 2) * this.k;
     this.cy = top + room / 2 - ((box.y0 + box.y1) / 2) * this.k;
 
+    // The card's colours never change: read once.
+    if (this.pen) return;
     const root = getComputedStyle(document.documentElement);
     const token = (name: string, fallback: string) => parse(root.getPropertyValue(name).trim() || fallback).join(', ');
     this.pen = {

@@ -1,3 +1,4 @@
+import { fit } from '../sketch/stage';
 import { Series, Temper } from './series';
 
 /** One tick every this many ms, this many px apart: about 24 px/s. Steady, never hurried. */
@@ -84,12 +85,16 @@ export class ChartsPainter {
   resize(width: number, height: number, stage: { top: number; room: number }, pen: ChartsPen, dpr: number) {
     this.width = width;
     this.dpr = dpr;
-    for (const c of [this.ctx.canvas, this.grid.canvas]) {
-      c.width = Math.round(width * dpr);
-      c.height = Math.round(height * dpr);
-    }
-    this.mask.canvas.width = Math.ceil(width / MASK);
-    this.mask.canvas.height = Math.ceil(height / MASK);
+    // Canvases keep their backing store while a tile opens or closes (see fit); the off-screen
+    // ones simply match the page's. Assigning a size, even the same one, reallocates and clears.
+    const page = this.ctx.canvas;
+    fit(page, width, height, dpr);
+    const size = (c: HTMLCanvasElement | OffscreenCanvas, w: number, h: number) => {
+      if (c.width !== w) c.width = w;
+      if (c.height !== h) c.height = h;
+    };
+    size(this.grid.canvas, page.width, page.height);
+    size(this.mask.canvas, Math.ceil(page.width / dpr / MASK), Math.ceil(page.height / dpr / MASK));
     // The stage, a little inset so spikes have air.
     const ok = stage.room >= 70;
     this.top = ok ? stage.top + stage.room * 0.1 : 0;

@@ -52,12 +52,21 @@ export class Hero {
     });
 
     afterNextRender(() => {
+      // Only while it can be seen: in an open tile and on screen, not on a page swiped away.
+      // (Otherwise every change would run its whole show behind the page being read.) Coming
+      // back, it simply shows the persona it stopped at and carries on.
+      let inView = typeof IntersectionObserver === 'undefined';
+      const io = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(([e]) => (inView = e.isIntersecting));
+      io?.observe(host);
       const timer = setInterval(() => {
-        const visible = !document.hidden && (this.tile?.open() ?? true);
+        const visible = inView && !document.hidden && (this.tile?.open() ?? true);
         if (!visible || this.frozen()) return;
         this.persona.update((p) => CYCLE[(CYCLE.indexOf(p) + 1) % CYCLE.length]);
       }, CYCLE_MS);
-      destroyRef.onDestroy(() => clearInterval(timer));
+      destroyRef.onDestroy(() => {
+        clearInterval(timer);
+        io?.disconnect();
+      });
     });
   }
 

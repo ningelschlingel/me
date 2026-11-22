@@ -1,8 +1,9 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CONTACTS } from '../../content';
 import { NAV_GROW, NAV_GROW_MOBILE, NAV_OPEN_GROW, Viewport } from '../../layout';
+import { ms } from '../../tempo';
 
-/** The menu's open/close transition (nav.css) plus a frame. */
+/** The menu's open/close transition (nav.css) plus a frame. At tempo 1, ms. */
 const COVER_MS = 720;
 
 /**
@@ -38,10 +39,10 @@ export class Nav {
     effect(() => {
       const open = this.expanded();
       this.viewport.navOpen.set(open);
-      // Covering starts at once and ends only when the menu has slid back (nav.css, 0.7 s).
+      // Covering starts at once and ends only when the menu has slid back (nav.css).
       clearTimeout(this.coverTimer);
       if (open) this.viewport.navCovering.set(true);
-      else this.coverTimer = setTimeout(() => this.viewport.navCovering.set(false), COVER_MS);
+      else this.coverTimer = setTimeout(() => this.viewport.navCovering.set(false), ms(COVER_MS));
     });
   }
 

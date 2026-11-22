@@ -18,8 +18,6 @@ export const INTERACTIVE = 'a, button, input, select, textarea, label, [data-no-
     '[attr.inert]': "state() === 'hidden' ? '' : null",
     '[attr.data-pinned]': "pinned() ? '' : null",
     '(pointerdown)': 'onPointerDown($event)',
-    '(touchstart)': 'onTouchStart($event)',
-    '(touchend)': 'onTouchEnd($event)',
     '(click)': 'onClick($event)',
     '(mouseenter)': 'hovered.emit(true)',
     '(mouseleave)': 'hovered.emit(false)',
@@ -93,6 +91,17 @@ export class Tile {
   }
 
   constructor() {
+    // Touches are only watched, never cancelled: passive, so the browser never waits for this
+    // script before it scrolls a page.
+    const touchStart = (e: TouchEvent) => this.onTouchStart(e);
+    const touchEnd = (e: TouchEvent) => this.onTouchEnd(e);
+    this.host.addEventListener('touchstart', touchStart, { passive: true });
+    this.host.addEventListener('touchend', touchEnd, { passive: true });
+    this.destroyRef.onDestroy(() => {
+      this.host.removeEventListener('touchstart', touchStart);
+      this.host.removeEventListener('touchend', touchEnd);
+    });
+
     // Tell the deck how much room a tile spends around its content, so columns come out exact.
     afterRenderEffect(() => {
       this.viewport.width();
@@ -114,8 +123,13 @@ export class Tile {
 
       const body = this.host.querySelector<HTMLElement>(':scope > .body');
       if (!body || typeof ResizeObserver === 'undefined') return;
+      // Set on the body itself and registered as not inherited (styles.css): a change every frame
+      // while the tile moves then restyles the body alone, not everything inside it.
+      let bodyH = '';
       const ro = new ResizeObserver(() => {
-        if (!this.pinned()) this.host.style.setProperty('--body-h', `${body.offsetHeight}px`);
+        if (this.pinned()) return;
+        const h = `${body.offsetHeight}px`;
+        if (h !== bodyH) body.style.setProperty('--body-h', (bodyH = h));
       });
       ro.observe(body);
       this.destroyRef.onDestroy(() => ro.disconnect());
@@ -138,12 +152,21 @@ export class Tile {
   /**
    * Where the pager is, as a continuous page index (1.5 = halfway from the second page to the
    * third), every frame while it moves. Written straight to CSS (--progress), so the dial and the
-   * progress rule follow the finger without a change detection run per frame.
+   * progress rule follow the finger without a change detection run per frame. Set on the header
+   * (where both live), not the tile: an inherited property changed on the tile would restyle every
+   * page in it, every frame.
    */
   setProgress(progress: number, pages: number) {
-    this.host.style.setProperty('--progress', progress.toFixed(4));
-    this.host.style.setProperty('--pages', String(Math.max(1, pages)));
+    const value = progress.toFixed(4);
+    const count = String(Math.max(1, pages));
+    if (value === this.progress.value && count === this.progress.pages) return;
+    this.progress = { value, pages: count };
+    this.head ??= this.host.querySelector<HTMLElement>(':scope > .head');
+    this.head?.style.setProperty('--progress', value);
+    this.head?.style.setProperty('--pages', count);
   }
+  private progress = { value: '', pages: '' };
+  private head: HTMLElement | null = null;
 
   toggle() {
     this.state() === 'active' ? this.dismiss.emit() : this.activate.emit();

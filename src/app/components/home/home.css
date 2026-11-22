@@ -28,7 +28,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition: background calc(0.2s * var(--tempo)), color calc(0.2s * var(--tempo)), border-color calc(0.2s * var(--tempo));
 }
 .filter:hover { border-color: currentColor; }
 .filter.on {
@@ -82,7 +82,7 @@
   letter-spacing: 0.15em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: border-color calc(0.2s * var(--tempo));
 }
 .picker-bar:active,
 .picker.open .picker-bar { border-color: currentColor; }
@@ -96,7 +96,7 @@
   vector-effect: non-scaling-stroke;
   stroke-linecap: butt;
   transform-origin: 8px 8px;
-  transition: opacity 0.2s, scale 0.2s;
+  transition: opacity calc(0.2s * var(--tempo)), scale calc(0.2s * var(--tempo));
 }
 .picker-icon .cross,
 .picker.open .picker-icon .funnel { opacity: 0; scale: 0.6; }
@@ -112,12 +112,12 @@
   background: var(--color-night);
   clip-path: inset(0 0 100% 0);
   visibility: hidden;
-  transition: clip-path 0.18s ease-out, visibility 0s 0.18s;
+  transition: clip-path calc(0.18s * var(--tempo)) ease-out, visibility 0s calc(0.18s * var(--tempo));
 }
 .picker.open .picker-options {
   clip-path: inset(0 0 -1px 0);
   visibility: visible;
-  transition: clip-path 0.18s ease-out, visibility 0s;
+  transition: clip-path calc(0.18s * var(--tempo)) ease-out, visibility 0s;
 }
 .picker-option {
   height: 2.75rem;
@@ -222,7 +222,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: scale 0.8s var(--ease-snap);
+  transition: scale calc(0.8s * var(--tempo)) var(--ease-snap);
 }
 /* The tags: one quiet mono line under the picture, separated by round points. It may wrap. */
 .tags {

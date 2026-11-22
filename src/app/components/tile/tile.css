@@ -14,12 +14,12 @@
   min-height: 0;
   overflow: hidden;
   cursor: pointer;
-  transition: flex-grow 0.7s var(--ease-snap), visibility 0s;
+  transition: flex-grow calc(0.7s * var(--tempo)) var(--ease-snap), visibility 0s;
 }
 /* Collapsed to nothing; leaves the paint and the tab order once it got there. */
 :host([data-state='hidden']) {
   visibility: hidden;
-  transition: flex-grow 0.7s var(--ease-snap), visibility 0s 0.7s;
+  transition: flex-grow calc(0.7s * var(--tempo)) var(--ease-snap), visibility 0s calc(0.7s * var(--tempo));
 }
 
 .head {
@@ -39,7 +39,7 @@
   white-space: nowrap;
   /* At rest the titles are soft; the one you look into is cut sharp (Geologica's SHRP axis). */
   --sharp: 0;
-  transition: font-variation-settings 0.6s var(--ease-snap);
+  transition: font-variation-settings calc(0.6s * var(--tempo)) var(--ease-snap);
 }
 :host([data-state='peek']) .title,
 :host([data-state='active']) .title { --sharp: 100; }
@@ -50,7 +50,7 @@
   text-transform: uppercase;
   white-space: nowrap;
   opacity: 0;
-  transition: opacity 0.4s;
+  transition: opacity calc(0.4s * var(--tempo));
 }
 :host([data-state='peek']) .sub,
 :host([data-state='active']) .sub { opacity: 0.6; }
@@ -64,7 +64,7 @@
   cursor: pointer;
 }
 .toggle svg {
-  transition: rotate 0.5s var(--ease-pop);
+  transition: rotate calc(0.5s * var(--tempo)) var(--ease-pop);
 }
 :host([data-state='active']) .toggle svg { rotate: 45deg; }
 
@@ -85,11 +85,11 @@
     display: block;
     height: calc(var(--title) * 0.85 + 2 * var(--pad-y));
     padding: 0;
-    transition: height 0.6s 0.1s cubic-bezier(0.65, 0, 0.35, 1);
+    transition: height calc(0.6s * var(--tempo)) calc(0.1s * var(--tempo)) cubic-bezier(0.65, 0, 0.35, 1);
   }
   :host([data-state='active']) .head {
     height: var(--line);
-    transition: height 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    transition: height calc(0.6s * var(--tempo)) cubic-bezier(0.65, 0, 0.35, 1);
   }
 
   /* The title is a door on an overhead track, faked flat: it slides up out of the tile while
@@ -102,10 +102,10 @@
     transform-origin: 0 0;
     /* Closing: the same way back down, unfolding as it comes. */
     transition:
-      translate 0.55s 0.1s cubic-bezier(0.65, 0, 0.35, 1),
-      scale 0.55s 0.1s cubic-bezier(0.65, 0, 0.35, 1),
-      opacity 0.35s 0.15s,
-      font-variation-settings 0.6s var(--ease-snap);
+      translate calc(0.55s * var(--tempo)) calc(0.1s * var(--tempo)) cubic-bezier(0.65, 0, 0.35, 1),
+      scale calc(0.55s * var(--tempo)) calc(0.1s * var(--tempo)) cubic-bezier(0.65, 0, 0.35, 1),
+      opacity calc(0.35s * var(--tempo)) calc(0.15s * var(--tempo)),
+      font-variation-settings calc(0.6s * var(--tempo)) var(--ease-snap);
   }
   /* Opening: up and out over the tile's top edge, cut sharp as it goes. */
   :host([data-state='active']) .title {
@@ -113,10 +113,10 @@
     scale: 1 0.35;
     opacity: 0;
     transition:
-      translate 0.55s cubic-bezier(0.65, 0, 0.35, 1),
-      scale 0.55s cubic-bezier(0.65, 0, 0.35, 1),
-      opacity 0.4s 0.1s,
-      font-variation-settings 0.3s;
+      translate calc(0.55s * var(--tempo)) cubic-bezier(0.65, 0, 0.35, 1),
+      scale calc(0.55s * var(--tempo)) cubic-bezier(0.65, 0, 0.35, 1),
+      opacity calc(0.4s * var(--tempo)) calc(0.1s * var(--tempo)),
+      font-variation-settings calc(0.3s * var(--tempo));
   }
   .sub { display: none; }
 
@@ -135,14 +135,14 @@
     opacity: 0;
     visibility: hidden;
     translate: 0 0.6rem;
-    transition: opacity 0.2s, translate 0.3s, visibility 0s 0.2s;
+    transition: opacity calc(0.2s * var(--tempo)), translate calc(0.3s * var(--tempo)), visibility 0s calc(0.2s * var(--tempo));
   }
   /* It rises into the line behind the title, once the title has started to tip back. */
   :host([data-state='active']) .line {
     opacity: 1;
     visibility: visible;
     translate: none;
-    transition: opacity 0.35s 0.4s, translate 0.45s 0.4s cubic-bezier(0.2, 0.9, 0.25, 1.1), visibility 0s;
+    transition: opacity calc(0.35s * var(--tempo)) calc(0.4s * var(--tempo)), translate calc(0.45s * var(--tempo)) calc(0.4s * var(--tempo)) cubic-bezier(0.2, 0.9, 0.25, 1.1), visibility 0s;
   }
   .line-sub { overflow: hidden; text-overflow: ellipsis; opacity: 0.8; }
   /* Something in the slot (INDEX: the active filter) takes the subtitle's place. */
@@ -180,7 +180,7 @@
     display: block;
     height: 2px;
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity calc(0.3s * var(--tempo));
   }
   .progress::before,
   .progress::after {
@@ -196,7 +196,7 @@
     height: 2px;
     translate: calc(var(--progress, 0) * 100%) 0;
   }
-  :host([data-state='active']) .progress { opacity: 1; transition: opacity 0.3s 0.3s; }
+  :host([data-state='active']) .progress { opacity: 1; transition: opacity calc(0.3s * var(--tempo)) calc(0.3s * var(--tempo)); }
 
   /* The way out: a drawn ×, no button around it, on the same 2px stroke as every control glyph.
      Invisible at rest (the row itself is the target) unless it has keyboard focus. A tap
@@ -207,13 +207,13 @@
     width: var(--line);
     height: var(--line);
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity calc(0.3s * var(--tempo));
   }
   .toggle svg { width: 1rem; overflow: visible; }
   .toggle path { stroke-width: 2px; vector-effect: non-scaling-stroke; stroke-linecap: butt; }
   .toggle:focus-visible,
-  :host([data-state='active']) .toggle { opacity: 1; transition: opacity 0.3s 0.2s; }
-  :host([data-state='active']) .toggle:active svg { rotate: 135deg; transition-duration: 0.2s; }
+  :host([data-state='active']) .toggle { opacity: 1; transition: opacity calc(0.3s * var(--tempo)) calc(0.2s * var(--tempo)); }
+  :host([data-state='active']) .toggle:active svg { rotate: 135deg; transition-duration: calc(0.2s * var(--tempo)); }
 
   /* Stepping from one open tile to the next: one collapses while the other grows, so a title
      lifting or dropping in both at once only reads as a flicker. The open header just goes
@@ -224,7 +224,7 @@
   }
   :host([data-state='hidden'][data-from='active']) :is(.head, .title, .line, .progress, .toggle, .toggle svg) {
     transition-duration: 0s;
-    transition-delay: 0.7s;
+    transition-delay: calc(0.7s * var(--tempo));
   }
 }
 
@@ -238,7 +238,7 @@
   opacity: 0;
   visibility: hidden;
   translate: 0 2rem;
-  transition: opacity 0.3s, translate 0.5s var(--ease-snap), visibility 0s 0.3s;
+  transition: opacity calc(0.3s * var(--tempo)), translate calc(0.5s * var(--tempo)) var(--ease-snap), visibility 0s calc(0.3s * var(--tempo));
 }
 /* Phones, menu open over this tile: the content keeps its height and the menu covers it. */
 :host([data-pinned]) .body {
@@ -252,7 +252,7 @@
   opacity: 1;
   visibility: visible;
   translate: none;
-  transition: opacity 0.45s 0.25s, translate 0.7s 0.2s var(--ease-snap), visibility 0s;
+  transition: opacity calc(0.45s * var(--tempo)) calc(0.25s * var(--tempo)), translate calc(0.7s * var(--tempo)) calc(0.2s * var(--tempo)) var(--ease-snap), visibility 0s;
 }
 
 @media (width >= 64rem) {
@@ -279,7 +279,7 @@
     width: 2.5rem;
     height: 2.5rem;
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity calc(0.3s * var(--tempo));
   }
   .toggle svg { width: 1.1rem; }
   .toggle:focus-visible { opacity: 1; }

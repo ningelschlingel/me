@@ -24,17 +24,26 @@ export async function renderPortraits(src: string): Promise<Record<Persona, stri
     return c;
   };
 
+  // One persona at a time, with a breath for the page in between: the whole set in one go
+  // would hold up the first taps on a phone. The first change is seconds away anyway.
+  await pause();
   const lum = luminance(crop(N));
   const at: Lum = (u, v) => lum[clampI(v * N, N) * N + clampI(u * N, N)];
   const url = (c: HTMLCanvasElement) => c.toDataURL('image/jpeg', 0.9);
 
-  return {
-    jan: url(crop(OUT)),
-    architect: url(blueprint(lum)),
-    embedded: url(leds(at)),
-    designer: url(halftone(at)),
-  };
+  await pause();
+  const jan = url(crop(OUT));
+  await pause();
+  const architect = url(blueprint(lum));
+  await pause();
+  const embedded = url(leds(at));
+  await pause();
+  const designer = url(halftone(at));
+  return { jan, architect, embedded, designer };
 }
+
+/** Lets the page handle input and paint before the next piece of work. */
+const pause = () => new Promise<void>((resolve) => setTimeout(resolve, 16));
 
 function blueprint(lum: Float32Array) {
   const [c, g] = canvas(OUT);

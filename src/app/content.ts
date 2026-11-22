@@ -4,6 +4,7 @@
  */
 
 import type { SketchKind } from './components/sketch/registry';
+import { SHOTS } from './shots';
 
 export type RoleId = 'architect' | 'embedded' | 'designer';
 export type Persona = 'jan' | RoleId;
@@ -120,8 +121,29 @@ export interface Project {
   image: string;
 }
 
-/** Recommended: 1600×1000 (16:10), under 300 kB. Screenshots as .png, photos as .jpg. */
+/**
+ * Recommended: 1600×1000 (16:10) or larger. Screenshots as .png, photos as .jpg. After adding
+ * or replacing one, run scripts/optimize-images.sh: the page shows the exported sizes.
+ */
 const shot = (file: string) => `projects/${file}`;
+
+/** A title image's exported sizes (scripts/optimize-images.sh), or the original if it has none. */
+export interface SizedShot {
+  /** The largest size (or the original): for browsers without srcset. */
+  src: string;
+  srcset: string | null;
+}
+
+export function sized(image: string): SizedShot {
+  const file = image.replace(/^projects\//, '');
+  const widths = SHOTS[file];
+  if (!widths?.length) return { src: image, srcset: null };
+  const base = `projects/sized/${file.replace(/\.[^.]+$/, '')}`;
+  return {
+    src: `${base}-${widths[widths.length - 1]}.jpg`,
+    srcset: widths.map((w) => `${base}-${w}.jpg ${w}w`).join(', '),
+  };
+}
 
 const gh = (repo: string) => `https://github.com/ningelschlingel/${repo}`;
 

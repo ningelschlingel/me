@@ -12,7 +12,7 @@
   /* Ink: the menu frames the page and stays distinct from every column it meets. */
   background: var(--color-ink);
   color: var(--color-paper);
-  transition: flex-grow 0.7s var(--ease-snap);
+  transition: flex-grow calc(0.7s * var(--tempo)) var(--ease-snap);
 }
 
 .bar,
@@ -47,7 +47,7 @@
   border-radius: 50%; /* the same round full stop as ME. YOU. INDEX. OURS. */
   background: var(--color-signal);
 }
-:host(.open) .dot { animation: hop 0.6s var(--ease-pop); }
+:host(.open) .dot { animation: hop calc(0.6s * var(--tempo)) var(--ease-pop); }
 @keyframes hop {
   40% { translate: 0 -0.35em; rotate: 20deg; }
   70% { translate: 0 0.04em; }
@@ -69,12 +69,12 @@
   stroke-dashoffset: 1;
   /* Undrawn, the round cap would still leave a dot: hidden once it has retracted. */
   opacity: 0;
-  transition: stroke-dashoffset 0.25s ease-in, opacity 0s 0.25s;
+  transition: stroke-dashoffset calc(0.25s * var(--tempo)) ease-in, opacity 0s calc(0.25s * var(--tempo));
 }
 :host(.open) .swoosh path {
   stroke-dashoffset: 0;
   opacity: 1;
-  transition: stroke-dashoffset 0.5s 0.15s var(--ease-snap), opacity 0s 0.15s;
+  transition: stroke-dashoffset calc(0.5s * var(--tempo)) calc(0.15s * var(--tempo)) var(--ease-snap), opacity 0s calc(0.15s * var(--tempo));
 }
 
 .arrow {
@@ -84,7 +84,7 @@
   height: 2.75rem;
   margin-right: -0.75rem; /* a finger-sized target; the glyph stays on the inset */
   cursor: pointer;
-  transition: rotate 0.7s var(--ease-pop);
+  transition: rotate calc(0.7s * var(--tempo)) var(--ease-pop);
 }
 /* Control glyphs share one stroke (the tile's ×, the filter): 2px, cut square. */
 .arrow svg { width: 1.125rem; overflow: visible; }
@@ -97,7 +97,7 @@
   gap: 0.25rem;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s, visibility 0s 0.3s;
+  transition: opacity calc(0.3s * var(--tempo)), visibility 0s calc(0.3s * var(--tempo));
 }
 .links a {
   font-size: clamp(2rem, 7dvh, 4.5rem);
@@ -105,13 +105,13 @@
   line-height: 1;
   letter-spacing: -0.05em;
   text-transform: uppercase;
-  transition: padding 0.3s var(--ease-snap);
+  transition: padding calc(0.3s * var(--tempo)) var(--ease-snap);
 }
 .links a:hover { padding-left: 1rem; font-style: italic; }
 :host(.open) .links {
   opacity: 1;
   visibility: visible;
-  transition: opacity 0.3s 0.2s, visibility 0s;
+  transition: opacity calc(0.3s * var(--tempo)) calc(0.2s * var(--tempo)), visibility 0s;
 }
 
 @media (width >= 64rem) {

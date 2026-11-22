@@ -31,7 +31,7 @@ app-pager .pager-track {
   height: 100%;
   will-change: transform;
   /* The lean towards a page-turning edge (pager.ts), on top of the spring's transform. */
-  transition: translate 0.5s var(--ease-snap);
+  transition: translate calc(0.5s * var(--tempo)) var(--ease-snap);
 }
 
 /* A page: one of --cols equal columns (px, set by the pager), as tall as the track, scrolls by itself. */
@@ -110,7 +110,7 @@ app-pager .pager-dots button {
   opacity: 0.25;
   scale: 0.8;
   cursor: pointer;
-  transition: width 0.4s var(--ease-snap), opacity 0.3s, scale 0.3s var(--ease-pop);
+  transition: width calc(0.4s * var(--tempo)) var(--ease-snap), opacity calc(0.3s * var(--tempo)), scale calc(0.3s * var(--tempo)) var(--ease-pop);
 }
 /* A finger-sized target around a small bead. */
 app-pager .pager-dots button::after {

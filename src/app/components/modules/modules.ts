@@ -3,7 +3,7 @@ import { Viewport } from '../../layout';
 import { Pen, smooth } from '../drafting/drafting';
 import { live, stageRoom } from '../sketch/live';
 import { CameraRig } from '../sketch/rig';
-import { background, parse, titleCeiling } from '../sketch/stage';
+import { background, fit, parse, titleCeiling } from '../sketch/stage';
 import { ISO, drawModules, extent, offsetAt } from './drawing';
 
 /** The drawing draws itself in over this long (seconds), the first time it is seen. */
@@ -97,9 +97,7 @@ export class Modules {
     const width = this.host.clientWidth;
     const height = this.host.clientHeight;
     this.dpr = Math.min(2, window.devicePixelRatio || 1);
-    const canvas = this.canvasRef().nativeElement;
-    canvas.width = Math.round(width * this.dpr);
-    canvas.height = Math.round(height * this.dpr);
+    fit(this.canvasRef().nativeElement, width, height, this.dpr);
 
     // The same stage as every sketch; fit the drawing at its widest (mid-turn, module out),
     // plus some px for the notes.
@@ -119,6 +117,8 @@ export class Modules {
     this.cx = mid - ((box.x0 + box.x1) / 2) * this.k;
     this.cy = top + room / 2 - ((box.y0 + box.y1) / 2) * this.k;
 
+    // The card's colours never change: read once.
+    if (this.pen) return;
     const root = getComputedStyle(document.documentElement);
     const token = (name: string, fallback: string) => parse(root.getPropertyValue(name).trim() || fallback).join(', ');
     this.pen = {

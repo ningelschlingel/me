@@ -1,5 +1,6 @@
 import { Component, DestroyRef, ElementRef, afterNextRender, effect, inject, signal, untracked } from '@angular/core';
 import { Viewport } from '../../layout';
+import { ms } from '../../tempo';
 import { CameraRig } from '../sketch/rig';
 import { titleCeiling } from '../sketch/stage';
 import { Tile } from '../tile/tile';
@@ -204,7 +205,7 @@ const UNITS = 1.775;
  * start measured against that lands far off and takes seconds to come back). They are in
  * sight a few hundred ms later: about a second after the click (measured in Chrome).
  */
-const LAUNCH_MS = 600;
+const LAUNCH_MS = 600; // at tempo 1 (tempo.ts)
 
 @Component({
   selector: 'app-marks',
@@ -384,7 +385,7 @@ export class Marks {
         const visit = this.tile?.visit() ?? 0;
         if (visit !== arrived) {
           arrived = visit;
-          launchAt = Math.max(now, this.openedAt + LAUNCH_MS);
+          launchAt = Math.max(now, this.openedAt + ms(LAUNCH_MS));
         }
         if (!frame) {
           last = now;
